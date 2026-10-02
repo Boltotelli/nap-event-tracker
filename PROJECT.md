@@ -18,9 +18,9 @@ Production URL: https://nap-event-tracker.vercel.app
 Test environment: GitHub Pages from `develop`
 Test URL: https://boltotelli.github.io/nap-event-tracker/
 
-The old Vercel test project remains legacy and is no longer the intended normal test path.
+The old Vercel test project `nap-event-tracker-test` was retired on 2026-10-02. GitHub Pages from `develop` is the supported test environment.
 
-During the 2026-10-02 migration, production Vercel is still connected to `Boltotelli/welcome-nrw` until explicit verification and cutover.
+Production Vercel was cut over to this dedicated repository and verified on 2026-10-02.
 
 ## Backend
 Shared Supabase project:
@@ -42,4 +42,4 @@ Do not make production fixes only inside ChatGPT or Supabase-hosted assets witho
 - Do not expose secret/service-role keys.
 - Test changes before promotion to main.
 - Database migrations are separate from frontend/repository migrations.
-- Do not delete the legacy source in welcome-nrw until the new Vercel connections are proven stable.
+- Legacy NAP source in `welcome-nrw` was removed on 2026-10-02 after the dedicated production/test paths were verified.
