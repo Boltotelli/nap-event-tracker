@@ -1,0 +1,58 @@
+name: NAP Tracker Test — GitHub Pages
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: nap-test-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      - name: Validate test build
+        shell: bash
+        run: |
+          test -s index.html
+          test -s live-adapter.js
+          test -s native-screen-import.js
+          test -s live-translations-v2.js
+          test -d assets/alliance
+
+      - name: Prepare Pages artifact
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/nap-site"
+          cp -R . "$RUNNER_TEMP/nap-site/"
+          rm -rf "$RUNNER_TEMP/nap-site/.git" "$RUNNER_TEMP/nap-site/.github"
+          touch "$RUNNER_TEMP/nap-site/.nojekyll"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload site artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ runner.temp }}/nap-site
+
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
