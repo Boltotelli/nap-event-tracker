@@ -2,9 +2,9 @@
 
 Last updated: 2026-10-02
 
-## Current migration state
+## Current state
 
-The NAP application is being separated from `Boltotelli/welcome-nrw` into this dedicated repository.
+The NAP application repository split was completed and verified on 2026-10-02. This repository is now the application source of truth.
 
 ### Verified live production source
 The production URL `https://nap-event-tracker.vercel.app` was fetched directly and compared with:
@@ -48,20 +48,16 @@ Shared Supabase is intentional. Do not split the database as part of repository 
 
 Discord bots and Welcome Page are separate applications even where they share Supabase data.
 
-## Migration checklist
+## Migration completed
 
-- [x] Create dedicated repository.
-- [x] Verify actual live production source against deployed Vercel content.
-- [x] Import production text/code source into `main`.
-- [ ] Copy binary alliance badge assets.
-- [x] Create `develop` from the verified production baseline.
-- [x] Compare target branches to source snapshots.
-- [ ] Reconnect test Vercel project to new repo/develop.
-- [ ] Verify test.
-- [ ] Reconnect production Vercel project to new repo/main.
-- [ ] Verify production.
-- [x] GitHub Pages test environment moved to new repo/develop.
-- [ ] Only after stable operation, remove legacy NAP source from welcome-nrw.
+- [x] Dedicated repository created.
+- [x] Production source verified against the prior live Vercel deployment.
+- [x] Production source and alliance badge assets imported into `main`.
+- [x] `develop` established for test/development.
+- [x] GitHub Pages test environment deployed from `develop` and verified.
+- [x] Vercel production reconnected to this repository / `main` and verified.
+- [x] Old Vercel test project retired.
+- [x] Legacy NAP source removed from `welcome-nrw` after stable cutover.
 
 ### GitHub Pages test
 
@@ -74,11 +70,10 @@ Current flow:
 
 The unfinished OCR / Performance / AM work is preserved on `feature/ocr-performance-v16` and is not part of the current live baseline.
 
-## Do not do
+## Current branch policy
 
-Do not delete legacy source, legacy branches, Vercel projects, Supabase tables, or Edge Functions during cutover unless separately reviewed.
+- `main`: approved production source; Vercel production tracks this branch.
+- `develop`: supported GitHub Pages test source.
+- `feature/ocr-performance-v16`: unfinished OCR/performance work intentionally preserved and not part of the production baseline.
 
-
-### Production cutover
-
-2026-10-02: Vercel production was reconnected to `Boltotelli/nap-event-tracker`, branch `main`, repository root. This documentation-only commit intentionally triggers the first production deployment from the new repository.
+Do not remove preserved feature work or shared Supabase runtime components merely as repository cleanup. Review runtime dependencies separately.
