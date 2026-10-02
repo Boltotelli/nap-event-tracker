@@ -56,3 +56,5 @@ jobs:
       - name: Deploy Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+# Re-run after enabling public GitHub Pages on 2026-10-02
