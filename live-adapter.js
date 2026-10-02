@@ -1826,10 +1826,11 @@ async function openManualTransfer2(){
 }
 function transferRow2(x){
  const ownSource=x.from_alliance===S.a,ownTarget=x.to_alliance===S.a,watching=x.status==='watching',ready=x.status==='ready';
- const inboundExternal=ownTarget&&(!x.from_alliance||!isNapAlliance2(x.from_alliance));
+ const inbound=ownTarget&&!ownSource;
+ const inboundExternal=inbound&&(!x.from_alliance||!isNapAlliance2(x.from_alliance));
  let buttons='';
- if((ownSource||inboundExternal)&&(watching||ready)){
-   buttons+='<button class="btn small secondary live-transfer-temp" data-id="'+E(x.candidate_id)+'" data-reject="'+(inboundExternal?'1':'0')+'">↩ '+E(inboundExternal?t('rejectTemp'):t('tempTransfer'))+'</button>';
+ if((ownSource||inbound)&&(watching||ready)){
+   buttons+='<button class="btn small secondary live-transfer-temp" data-id="'+E(x.candidate_id)+'" data-reject="'+(inbound?'1':'0')+'">↩ '+E(inbound?t('rejectTemp'):t('tempTransfer'))+'</button>';
  }
  if(ownSource){
    if(watching)buttons+='<button class="btn small primary live-transfer-confirm" data-id="'+E(x.candidate_id)+'">✓ Jetzt bestätigen</button>';
