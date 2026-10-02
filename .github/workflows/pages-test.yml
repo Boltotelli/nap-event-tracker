@@ -58,3 +58,5 @@ jobs:
         uses: actions/deploy-pages@v4
 
 # Re-run after enabling public GitHub Pages on 2026-10-02
+
+# Re-run after Pages source was enabled
