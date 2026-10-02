@@ -54,14 +54,25 @@ Discord bots and Welcome Page are separate applications even where they share Su
 - [x] Verify actual live production source against deployed Vercel content.
 - [x] Import production text/code source into `main`.
 - [ ] Copy binary alliance badge assets.
-- [ ] Create/import `develop` from current development source.
-- [ ] Compare target branches to source snapshots.
+- [x] Create `develop` from the verified production baseline.
+- [x] Compare target branches to source snapshots.
 - [ ] Reconnect test Vercel project to new repo/develop.
 - [ ] Verify test.
 - [ ] Reconnect production Vercel project to new repo/main.
 - [ ] Verify production.
-- [ ] Update GitHub Pages to new repo/develop.
+- [x] GitHub Pages test environment moved to new repo/develop.
 - [ ] Only after stable operation, remove legacy NAP source from welcome-nrw.
+
+### GitHub Pages test
+
+Test URL: `https://boltotelli.github.io/nap-event-tracker/`
+
+GitHub Pages deploys automatically from `develop` via `.github/workflows/pages-test.yml`.
+
+Current flow:
+`feature/* -> develop -> GitHub Pages test -> main -> Vercel production`
+
+The unfinished OCR / Performance / AM work is preserved on `feature/ocr-performance-v16` and is not part of the current live baseline.
 
 ## Do not do
 
