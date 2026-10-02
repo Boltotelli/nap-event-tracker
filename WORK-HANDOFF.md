@@ -77,3 +77,8 @@ The unfinished OCR / Performance / AM work is preserved on `feature/ocr-performa
 ## Do not do
 
 Do not delete legacy source, legacy branches, Vercel projects, Supabase tables, or Edge Functions during cutover unless separately reviewed.
+
+
+### Production cutover
+
+2026-10-02: Vercel production was reconnected to `Boltotelli/nap-event-tracker`, branch `main`, repository root. This documentation-only commit intentionally triggers the first production deployment from the new repository.
