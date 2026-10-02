@@ -15,10 +15,12 @@ Branches:
 Production Vercel project: `nap-event-tracker`
 Production URL: https://nap-event-tracker.vercel.app
 
-Test Vercel project: `nap-event-tracker-test`
-Test URL: https://nap-event-tracker-test.vercel.app
+Test environment: GitHub Pages from `develop`
+Test URL: https://boltotelli.github.io/nap-event-tracker/
 
-During the 2026-10-02 migration, Vercel is still connected to `Boltotelli/welcome-nrw` until explicit verification and cutover.
+The old Vercel test project remains legacy and is no longer the intended normal test path.
+
+During the 2026-10-02 migration, production Vercel is still connected to `Boltotelli/welcome-nrw` until explicit verification and cutover.
 
 ## Backend
 Shared Supabase project:
