@@ -41,6 +41,7 @@ That branch includes newer OCR/video compatibility work and must become `develop
 - ScreenImporter evidence/update logic must reuse existing violations/cases and avoid duplicates.
 - Times shown in the app should use UTC.
 - Support is privacy-scoped; alliance users must not gain access to another alliance's private case details.
+- Law 15 (Event Rotation Enforcement): non-NAP players interfering with a ranking position designated for a NAP nominee may be declared unprotected for a duration determined by NAP leadership; otherwise non-NAP event participation remains allowed.
 
 ## Infrastructure boundary
 
