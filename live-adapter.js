@@ -36,10 +36,8 @@ function isSessionAuthError2(err){
  return status===401||(status===400&&/(refresh|token|jwt|session)/.test(msg));
 }
 const loc=()=>({de:'de-DE',en:'en-US',fr:'fr-FR',es:'es-ES'}[L()]||'de-DE');
-function utcInputDate2(value){if(!value)return null;const raw=String(value).trim(),hasZone=/[zZ]$|[+-]\\d{2}:?\\d{2}$/.test(raw),d=new Date(hasZone?raw:raw+'Z');return Number.isNaN(d.getTime())?null:d}
-function utcInputIso2(value){const d=utcInputDate2(value);if(!d)throw Error('Invalid UTC time');return d.toISOString()}
-const N=n=>Number(n||0).toLocaleString(loc()), D=x=>{if(!x)return '–';const d=new Date(x);return Number.isNaN(d.getTime())?'–':d.toLocaleString(loc(),{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',timeZone:'UTC'})+' UTC'};
-function monthYear2(x){if(!x)return '';const d=new Date(x);return Number.isFinite(d.getTime())?d.toLocaleDateString(loc(),{month:'long',year:'numeric',timeZone:'UTC'}):''}
+const N=n=>Number(n||0).toLocaleString(loc()), D=x=>x?new Date(x).toLocaleString(loc(),{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'–';
+function monthYear2(x){if(!x)return '';const d=new Date(x);return Number.isFinite(d.getTime())?d.toLocaleDateString(loc(),{month:'long',year:'numeric'}):''}
 function performanceDate2(e){return monthYear2(e?.period_start||e?.period_end)||String(e?.label||'').trim()}
 function dur(ms){ms=Math.max(0,ms||0);return Math.floor(ms/3600000)+'h '+String(Math.floor(ms%3600000/60000)).padStart(2,'0')+'m'}
 function durLong2(ms){
@@ -99,16 +97,12 @@ function css(){const s=document.createElement('style');s.textContent=`body.n2loc
 .n2pen-line{stroke-dasharray:28;stroke-dashoffset:28;transition:stroke-dashoffset .28s ease .02s}
 .n2access-option[data-access="write"].active .n2pen-line{stroke-dashoffset:0}
 .n2access-hint{min-height:16px;font-size:9px;color:var(--muted);padding:0 2px;transition:opacity .15s ease}
-.n2access-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border:1px solid color-mix(in srgb,var(--gold) 50%,var(--line));border-radius:999px;background:color-mix(in srgb,var(--gold) 8%,var(--panel-2));color:var(--gold-text,var(--gold-2));font-size:8px;font-weight:1000;letter-spacing:.04em}
-.fab.n2-read-fab{cursor:default;display:grid;place-items:center;padding:0;line-height:0}
-.fab.n2-read-fab svg{width:31px;height:31px;display:block;margin:0}
-.fab.n2-read-fab path,.fab.n2-read-fab circle{stroke:currentColor;fill:none;stroke-width:1.8}
+.n2access-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border:1px solid color-mix(in srgb,var(--gold) 50%,var(--line));border-radius:999px;background:color-mix(in srgb,var(--gold) 8%,var(--panel-2));color:var(--gold-text,var(--gold-2));font-size:8px;font-weight:1000;letter-spacing:.04em}.fab.n2-read-fab{cursor:default;display:grid;place-items:center;padding:0;line-height:0}.fab.n2-read-fab svg{width:31px;height:31px;display:block;margin:0}.fab.n2-read-fab path,.fab.n2-read-fab circle{stroke:currentColor;fill:none;stroke-width:1.8}
 body.n2-readonly [data-go="add"]:not(.fab),
 body.n2-readonly .n2act,
 body.n2-readonly .live-r1-timer,
 body.n2-readonly .live-transfer-confirm,
 body.n2-readonly .live-transfer-temp,
-body.n2-readonly .live-manual-transfer,
 body.n2-readonly .live-post-contact-confirm,
 body.n2-readonly .live-post-contact-dismiss,
 body.n2-readonly .live-end-exclusion,
@@ -119,7 +113,6 @@ body.n2-readonly #livePerfManual,
 body.n2-readonly .live-report-law,
 body.n2-readonly .profile-r1-save,
 body.n2-readonly .profile-l4-start,
-body.n2-readonly .profile-sanction-act,
 body.n2-readonly .live-edit-violation,
 body.n2-readonly .live-delete-violation,
 body.n2-readonly #liveDeleteViolation,
@@ -127,8 +120,7 @@ body.n2-readonly .live-delete-confirm,
 body.n2-readonly #liveSaveLanguages,
 body.n2-readonly .live-event-override,
 body.n2-readonly #liveFeatKvk,
-body.n2-readonly #liveFeatMob,
-body.n2-readonly #markAllRead{display:none!important}
+body.n2-readonly #liveFeatMob{display:none!important}
 body.n2-readonly #view-add{display:none!important}
 body.n2-readonly #liveSettingsForm button[type="submit"],
 body.n2-readonly #liveTargetsForm button[type="submit"],
@@ -138,9 +130,7 @@ body.n2-readonly #liveCommentForm,
 body.n2-readonly #livePlayerIdForm,
 body.n2-readonly .live-shared-form,
 body.n2-readonly .live-member-plan button[type="submit"],
-body.n2-readonly .live-prep-score button[type="submit"],
-body.n2-readonly #liveLawForm button[type="submit"],
-body.n2-readonly #livePerfForm button[type="submit"]{display:none!important}
+body.n2-readonly .live-prep-score button[type="submit"]{display:none!important}
 body.n2-readonly #view-settings input,
 body.n2-readonly #view-settings select,
 body.n2-readonly #view-settings textarea,
@@ -256,16 +246,6 @@ function sanctionStatus2(s,v=null){
  }
  return {key:'open',label:w.open,short:w.open,cls:'gold'};
 }
-const TIMER_VIEW_WORDS2={
- de:{title:'Aktive Straf-Timer',sub:'Laufende R1- und NAP-Out-Zeiten deiner Allianz.',level:'Stufe',remaining:'Restzeit',ends:'Ende',open:'Spieler öffnen',timer:'Timer'},
- en:{title:'Active punishment timers',sub:'Running R1 and NAP OUT timers for your alliance.',level:'Level',remaining:'Time remaining',ends:'Ends',open:'Open player',timer:'Timer'},
- fr:{title:'Minuteurs de sanction actifs',sub:'Minuteurs R1 et NAP OUT actifs de votre alliance.',level:'Niveau',remaining:'Temps restant',ends:'Fin',open:'Ouvrir le joueur',timer:'Minuteur'},
- es:{title:'Temporizadores de sanción activos',sub:'Temporizadores R1 y NAP OUT activos de tu alianza.',level:'Nivel',remaining:'Tiempo restante',ends:'Fin',open:'Abrir jugador',timer:'Temporizador'}
-};
-function timerViewWords2(){return TIMER_VIEW_WORDS2[L()]||TIMER_VIEW_WORDS2.de}
-function timerRemaining2(end){const ms=new Date(end).getTime()-Date.now(),w=SANCTION_STATUS_WORDS2[L()]||SANCTION_STATUS_WORDS2.de;return Number.isFinite(ms)&&ms>0?dur(ms):w.expired}
-function activeOwnTimers2(){return [...new Set((S.x||[]).map(s=>s.player_name).filter(Boolean))].map(name=>sanctionState2(name).currentSanction).filter(s=>{if(!s?.end_at||Number(s.level)<2)return false;const v=(S.v||[]).find(v=>String(v.id)===String(s.violation_id));return sanctionStatus2(s,v).key==='active'}).sort((a,b)=>new Date(a.end_at)-new Date(b.end_at))}
-function refreshSanctionTimerLabels2(){document.querySelectorAll('[data-timer-end]').forEach(el=>{const end=el.getAttribute('data-timer-end');if(end)el.textContent=timerRemaining2(end)})}
 function actions(){
  return [...new Set(S.v.filter(v=>
    v.kind==='overspend'&&v.sanction_eligible!==false&&active(v)
@@ -276,14 +256,14 @@ function actions(){
  }).filter(Boolean);
 }
 function dl(a){const z=new Date((a.s||a.v)?.created_at||(a.v?.occurred_at)||0).getTime()+86400000-Date.now();return dur(Math.abs(z))+' '+t(z<0?'over':'left')}
-function renderHome(){document.querySelectorAll('[data-current-alliance]').forEach(x=>x.textContent=S.a);const A=actions(),k=document.querySelectorAll('#view-home .home-kpis .stat-value');if(k[0])k[0].textContent=A.length;if(k[1])k[1].textContent=S.o.length;if(k[2])k[2].textContent=S.e.length;if(k[3])k[3].textContent=S.t.length;homeActionCountBadge.textContent=A.length+' '+t('actions');const box=document.querySelector('#view-home .home-main-grid > .stack:first-child .card:first-child .card-body');if(box)box.innerHTML=A.length?A.map(a=>{const P=p(a.name),r1Missing=a.l===2&&a.s?.completed&&(!a.s.started_at||!a.s.end_at),lab=a.l===1?'Stufe 1 · Kontakt':a.l===2?(r1Missing?'Stufe 2 · R1 · Timer fehlt':'Stufe 2 · R1'):a.l===3?'Stufe 3 · 24h NAP OUT':'Stufe 4 · Extended',b=a.l===1?`<button class="btn small primary n2act" data-k="contact" data-id="${E(a.v.id)}">${E(t('contact'))}</button>`:a.l===2?`<button class="btn small primary n2act" data-k="r1" data-id="${E(a.s.id)}">${E(t('r1'))}</button>`:a.l===3?`<button class="btn small primary n2act" data-k="nap" data-id="${E(a.s.id)}">${E(t('nap'))}</button>`:'';return `<div class="action-item"><div><div class="player-line"><div class="player-avatar">${E(a.name[0])}</div><div><div class="player-name">${E(a.name)}</div><div class="player-id">ID ${E(P.game_id||'–')} · ${E(S.a)}</div></div></div></div><div class="action-right"><span class="pill gold">${E(lab)}</span><span class="deadline">${E(dl(a))}</span><div class="home-action-buttons">${b}<button class="btn small secondary n2message" data-id="${E(a.s.id)}" type="button">${E(playerMessageUi2().open)}</button><button class="mini-link n2open" data-p="${E(a.name)}">${E(t('open'))}</button></div></div></div>`}).join(''):`<div class="n2empty">✓ ${E(t('none'))}</div>`;const tb=document.querySelector('#view-home .home-main-grid > .stack:first-child .card:nth-child(2) tbody');if(tb)tb.innerHTML=S.v.slice(0,8).map(v=>`<tr><td><b>${E(v.player_name)}</b><br><span class="muted tiny">${E(S.a)}</span></td><td>${E(v.event_name||'')} · ${E(v.phase_name||'')}</td><td>${N(v.score)}</td><td>${violationLimit2(v)?N(violationLimit2(v).points):'–'}</td><td><span class="pill">${level(v.player_name)}</span></td><td>${v.contacted?'✓':'–'}</td></tr>`).join('')||`<tr><td colspan="6">${E(t('none'))}</td></tr>`;const tr=document.querySelector('#homeTransfers');if(tr)tr.innerHTML=S.t.length?S.t.map(x=>`<div class="transfer-card"><div class="transfer-main"><div class="player-line"><div class="player-avatar">${E((x.player_name||'?')[0])}</div><div><b>${E(x.player_name||'–')}</b><div class="muted tiny">ID ${E(x.game_id||'–')}</div></div></div><div class="transfer-route"><span class="pill">${E(x.from_alliance||'POOL')}</span><span>→</span><span class="pill blue">${E(x.to_alliance||'POOL')}</span></div></div><div class="muted small">${E(D(x.detected_since))}</div></div>`).join(''):`<div class="n2empty">${E(t('none'))}</div>`;document.querySelectorAll('.n2act').forEach(b=>b.onclick=()=>doAct(b.dataset.k,b.dataset.id));document.querySelectorAll('.n2message').forEach(b=>b.onclick=()=>openPlayerMessage2(b.dataset.id));document.querySelectorAll('.n2open').forEach(b=>b.onclick=()=>openProfile(b.dataset.p))}
+function renderHome(){document.querySelectorAll('[data-current-alliance]').forEach(x=>x.textContent=S.a);const A=actions(),k=document.querySelectorAll('#view-home .home-kpis .stat-value');if(k[0])k[0].textContent=A.length;if(k[1])k[1].textContent=S.o.length;if(k[2])k[2].textContent=S.e.length;if(k[3])k[3].textContent=S.t.length;homeActionCountBadge.textContent=A.length+' '+t('actions');const box=document.querySelector('#view-home .home-main-grid > .stack:first-child .card:first-child .card-body');if(box)box.innerHTML=A.length?A.map(a=>{const P=p(a.name),r1Missing=a.l===2&&a.s?.completed&&(!a.s.started_at||!a.s.end_at),lab=a.l===1?'Stufe 1 · Kontakt':a.l===2?(r1Missing?'Stufe 2 · R1 · Timer fehlt':'Stufe 2 · R1'):a.l===3?'Stufe 3 · 24h NAP OUT':'Stufe 4 · Extended',b=a.l===1?`<button class="btn small primary n2act" data-k="contact" data-id="${E(a.v.id)}">${E(t('contact'))}</button>`:a.l===2?`<button class="btn small primary n2act" data-k="r1" data-id="${E(a.s.id)}">${E(t('r1'))}</button>`:a.l===3?`<button class="btn small primary n2act" data-k="nap" data-id="${E(a.s.id)}">${E(t('nap'))}</button>`:'';return `<div class="action-item"><div><div class="player-line"><div class="player-avatar">${E(a.name[0])}</div><div><div class="player-name">${E(a.name)}</div><div class="player-id">ID ${E(P.game_id||'–')} · ${E(S.a)}</div></div></div></div><div class="action-right"><span class="pill gold">${E(lab)}</span><span class="deadline">${E(dl(a))}</span><div class="home-action-buttons">${b}<button class="mini-link n2open" data-p="${E(a.name)}">${E(t('open'))}</button></div></div></div>`}).join(''):`<div class="n2empty">✓ ${E(t('none'))}</div>`;const tb=document.querySelector('#view-home .home-main-grid > .stack:first-child .card:nth-child(2) tbody');if(tb)tb.innerHTML=S.v.slice(0,8).map(v=>`<tr><td><b>${E(v.player_name)}</b><br><span class="muted tiny">${E(S.a)}</span></td><td>${E(v.event_name||'')} · ${E(v.phase_name||'')}</td><td>${N(v.score)}</td><td>${violationLimit2(v)?N(violationLimit2(v).points):'–'}</td><td><span class="pill">${level(v.player_name)}</span></td><td>${v.contacted?'✓':'–'}</td></tr>`).join('')||`<tr><td colspan="6">${E(t('none'))}</td></tr>`;const tr=document.querySelector('#homeTransfers');if(tr)tr.innerHTML=S.t.length?S.t.map(x=>`<div class="transfer-card"><div class="transfer-main"><div class="player-line"><div class="player-avatar">${E((x.player_name||'?')[0])}</div><div><b>${E(x.player_name||'–')}</b><div class="muted tiny">ID ${E(x.game_id||'–')}</div></div></div><div class="transfer-route"><span class="pill">${E(x.from_alliance||'POOL')}</span><span>→</span><span class="pill blue">${E(x.to_alliance||'POOL')}</span></div></div><div class="muted small">${E(D(x.detected_since))}</div></div>`).join(''):`<div class="n2empty">${E(t('none'))}</div>`;document.querySelectorAll('.n2act').forEach(b=>b.onclick=()=>doAct(b.dataset.k,b.dataset.id));document.querySelectorAll('.n2open').forEach(b=>b.onclick=()=>openProfile(b.dataset.p))}
 function renderPlayers(){const g=document.querySelector('#playerGrid');if(!g)return;g.innerHTML=S.p.map(P=>{const name=P.name||P.player_name||'',V=vv(name),l=level(name),att=V.some(v=>v.kind==='swordland'||/swordland|trialliance|triforce/i.test(String(v.event_name||''))),last=V[0],A=act(name);let val=l===1?(V.some(v=>active(v)&&!v.contacted)?'offen':'✓'):l===2?(A?dl({s:A}):'–'):l===3?(A?.end_at?dur(new Date(A.end_at)-Date.now()):'offen'):'OK';return `<div class="player-card" data-p="${E(name)}" data-has-entry="${V.length||ss(name).length?'1':'0'}" data-attendance="${att?'1':'0'}" data-search="${E((name+' '+(P.game_id||'')).toLowerCase())}"><div class="player-card-top"><div class="player-meta"><div class="player-avatar">${E((name[0]||'?').toUpperCase())}</div><div><div class="player-name">${E(name)}</div><div class="player-id">${E(P.game_id||'–')}</div></div></div><span class="pill">${E(S.a)}</span></div><div class="metric-row"><div class="metric"><b>${V.length}</b><span>Verstöße</span></div><div class="metric"><b>${l}</b><span>Stufe</span></div><div class="metric"><b>${E(val)}</b><span>Status</span></div></div><div class="player-card-foot">${att?'<span class="pill gold">Swordland / TriAlliance</span>':'<span></span>'}<span class="muted tiny">${last?E(D(last.occurred_at)):'–'}</span></div></div>`}).join('');g.querySelectorAll('[data-p]').forEach(c=>c.onclick=()=>openProfile(c.dataset.p));if(typeof applyPlayerFilters==='function')applyPlayerFilters()}
 function openProfile(name){const P=p(name),V=vv(name),X=ss(name),l=level(name),view=document.querySelector('#view-profile');if(!view)return;view.querySelector('.profile-name').textContent=name;view.querySelector('.profile-main .profile-avatar span').textContent=(name[0]||'?').toUpperCase();view.querySelector('.profile-main .muted.small').innerHTML=`Player ID ${E(P.game_id||'–')} · <span class="pill">${E(S.a)}</span> · ${E((P.languages||[]).map(languageName2).join(' / ')||'–')}`;const h=view.querySelector('[data-profile-panel="violations"] tbody');if(h)h.innerHTML=V.map(v=>`<tr><td>${E(D(v.occurred_at))}</td><td>${E(v.event_name||'')} · ${E(v.phase_name||'')}</td><td>${N(v.score)}</td><td>${violationLimit2(v)?N(violationLimit2(v).points):'–'}</td><td>${E(v.source_type||'manual')}</td><td>–</td></tr>`).join('');setView('profile');if(typeof setProfileTab==='function')setProfileTab('violations')}
-function toLocalInput2(d){if(!d)return '';const x=new Date(d);if(Number.isNaN(x.getTime()))return '';return x.toISOString().slice(0,16)}
+function toLocalInput2(d){if(!d)return '';const x=new Date(d);if(Number.isNaN(x.getTime()))return '';const z=new Date(x.getTime()-x.getTimezoneOffset()*60000);return z.toISOString().slice(0,16)}
 async function setR1Timer2(id,input){
  const s=S.x.find(x=>String(x.id)===String(id));const val=typeof input==='string'?input:input?.value;
  if(!s||!val){alert(actionWord2('endRequired'));return}
- const end=utcInputDate2(val);if(!end||end<=new Date()){alert(actionWord2('endFuture'));return}
+ const end=new Date(val);if(Number.isNaN(end.getTime())||end<=new Date()){alert(actionWord2('endFuture'));return}
  try{await upd('sanctions',id,{started_at:s.started_at||new Date().toISOString(),end_at:end.toISOString()});await load();renderHomeFull2();renderPlayers2();if(document.getElementById('view-profile')?.classList.contains('active'))await openProfile2(s.player_name)}catch(err){alert(err.message||String(err))}
 }
 async function doAct(k,id){
@@ -350,8 +330,9 @@ function syncReadOnlyChrome2(){
 function decorate(){const ab=document.querySelector('.alliance-badge');if(ab)ab.innerHTML=allianceLogo2(S.a,'alliance-top-logo')+'<span>'+E(S.a)+'</span>';document.querySelectorAll('[data-current-alliance]').forEach(x=>x.textContent=S.a);const u=document.querySelector('.user-pill');if(u){u.innerHTML=allianceLogo2(S.a,'alliance-user-logo')+'<span>'+E(S.a)+'</span> '+(isReadOnly2()?'<span class="n2access-badge">◉ '+E(accessWords2().readOnly)+'</span>':'<span class="n2live">'+E(t('live'))+'</span>');u.title=t('logout');u.onclick=logout2}syncReadOnlyChrome2()}
 async function load(){
  const a=encodeURIComponent(S.a);
- const [p1,v,x,e,o,tr,bans,spend,settings,reviews,shared,notificationReads,syncStatus,level4Hosting,napStats,sgWindow,performance,supportUnread]=await Promise.all([
+ const [p1,poolPlayers,v,x,e,o,tr,bans,spend,settings,reviews,shared,notificationReads,syncStatus,level4Hosting,napStats,sgWindow,performance,supportUnread]=await Promise.all([
   tab('players','select=*&alliance_code=eq.'+a+'&order=name.asc'),
+  rpc('get_my_unaffiliated_tracked_players',{}).catch(()=>[]),
   tab('violations','select=*&alliance_code=eq.'+a+'&order=occurred_at.desc'),
   tab('sanctions','select=*&alliance_code=eq.'+a+'&order=created_at.desc'),
   rpc('get_public_nap_exclusions',{}),
@@ -370,7 +351,11 @@ async function load(){
   rpc('get_performance_dashboard',{}).catch(()=>null),
   rpc('get_support_unread_count',{}).catch(()=>0)
  ]);
- S.p=(p1||[]).filter(r=>r.alliance_code===S.a);S.v=(v||[]).filter(r=>r.alliance_code===S.a);S.x=(x||[]).filter(r=>r.alliance_code===S.a);
+ S.p=[
+  ...(p1||[]).filter(r=>r.alliance_code===S.a),
+  ...(poolPlayers||[]).filter(r=>r&&r.alliance_code==null).map(r=>({...r,_unaffiliated:true}))
+ ].sort((a,b)=>String(a.name||a.player_name||'').localeCompare(String(b.name||b.player_name||''),undefined,{sensitivity:'base',numeric:true}));
+ S.v=(v||[]).filter(r=>r.alliance_code===S.a);S.x=(x||[]).filter(r=>r.alliance_code===S.a);
  S.e=e||[];S.o=o||[];S.t=(tr||[]).filter(r=>r.from_alliance===S.a||r.to_alliance===S.a);S.bans=bans||[];S.spend=spend||[];
  S.reviews=reviews||[];S.shared=shared||[];S.notificationReads=new Set((notificationReads||[]).map(r=>String(r.notification_id)));
  S.syncStatus=syncStatus||null;S.settings=settings?.[0]||null;S.level4Hosting=level4Hosting||[];S.napStats=napStats||[];S.sgWindow=sgWindow||null;S.performance=performance||null;S.supportUnread=Math.max(0,Number(supportUnread||0));
@@ -407,7 +392,7 @@ async function boot(){
   showLoginRetry2(err);
  }
 }
-setTimeout(boot,0);setInterval(refreshSanctionTimerLabels2,30000);document.querySelector('#languagePicker')?.addEventListener('change',()=>setTimeout(()=>{if(S.a){decorate();renderHome();renderPlayers()}},0));
+setTimeout(boot,0);document.querySelector('#languagePicker')?.addEventListener('change',()=>setTimeout(()=>{if(S.a){decorate();renderHome();renderPlayers()}},0));
 
 /* === LIVE HELPERS V2 === */
 const NAP_LOGO_CODES2=new Set(['NRW','THM','NWO','NwO','CWR','PxR']);
@@ -521,8 +506,6 @@ function addLiveCss(){
  if(document.getElementById('n2LiveCss'))return;
  const s=document.createElement('style');s.id='n2LiveCss';s.textContent=
  '.live-avatar{overflow:hidden}.live-avatar img{width:100%;height:100%;object-fit:cover;display:block}.alliance-top-logo{width:22px;height:26px;object-fit:contain;display:block}.alliance-user-logo{width:24px;height:28px;object-fit:contain;display:block}.alliance-logo-badge{display:inline-flex;align-items:center;gap:5px;min-height:24px;padding:3px 7px;border:1px solid var(--line);border-radius:999px;background:var(--panel-3);font-size:9px;font-weight:900;white-space:nowrap;vertical-align:middle}.alliance-logo-badge img{width:15px;height:18px;object-fit:contain}.alliance-badge,.user-pill{display:flex;align-items:center;gap:7px}.profile-alliance-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.live-transfer-route{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px}.live-transfer-route>small{margin-left:2px}.live-language-editor{margin-top:12px;padding:10px 11px;border:1px solid var(--line);border-radius:11px;background:var(--panel-2)}.live-language-editor summary{cursor:pointer;font-size:10px;font-weight:850}.live-language-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:10px}.live-language-option{display:flex!important;align-items:center!important;gap:6px!important;padding:7px 8px;border:1px solid var(--line);border-radius:9px;background:var(--panel);font-size:9px!important;color:var(--text)!important}.live-language-option input{width:auto!important;min-height:0!important}.r1-home-timer{display:flex;gap:6px;align-items:center}.r1-home-end{min-height:31px!important;height:31px!important;width:175px!important;padding:4px 6px!important;font-size:9px!important}@media(max-width:700px){.r1-home-timer{flex-wrap:wrap}.r1-home-end{width:100%!important}}@media(max-width:700px){.live-language-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}'+
- '.home-action-buttons{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}.home-action-buttons .n2message{white-space:nowrap}@media(max-width:700px){.action-item{grid-template-columns:1fr}.action-right{align-items:stretch;text-align:left}.home-action-buttons{display:grid;grid-template-columns:1fr 1fr;justify-content:stretch}.home-action-buttons .n2message{grid-column:1/-1;width:100%}.home-action-buttons .n2open{justify-self:end}}'+
- '.player-message-action{margin-top:12px;justify-content:flex-start}.player-message-modal{width:min(680px,calc(100vw - 28px))}.player-message-langs{display:flex;gap:7px;flex-wrap:wrap}.player-message-preview{width:100%;min-height:300px;resize:vertical;line-height:1.5;white-space:pre-wrap}.player-message-modal .hero-actions{margin-top:2px}@media(max-width:700px){.player-message-action .btn{width:100%}.player-message-modal{max-height:calc(100dvh - 32px);overflow:auto}.player-message-preview{min-height:330px;font-size:14px}}'+
  '.live-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;padding:5px;background:var(--panel);border:1px solid var(--line);border-radius:14px;width:max-content;max-width:100%}'+
  '.live-tab{border:0;background:transparent;color:var(--muted);font:inherit;font-weight:850;font-size:10px;padding:8px 12px;border-radius:9px;cursor:pointer}.live-tab.active{background:var(--panel-3);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}'+
  '.live-panel-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:14px;align-items:start}'+
@@ -530,8 +513,7 @@ function addLiveCss(){
  '.live-form-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}.live-note{padding:10px 11px;border:1px dashed var(--line);border-radius:11px;color:var(--muted);font-size:9px;line-height:1.5}'+
  '.live-import-frame{width:100%;min-height:690px;border:1px solid var(--line);border-radius:14px;background:var(--panel-2)}'+
  '.live-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:13px}.live-stat{padding:12px;border:1px solid var(--line);border-radius:13px;background:var(--panel);min-width:0}.live-stat b{font-size:20px;display:block;max-width:100%;font-variant-numeric:tabular-nums;line-height:1.12;white-space:nowrap}.live-stat small{color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.06em}.performance-panel-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.performance-kpi-grid{display:grid;grid-template-columns:104px minmax(0,1fr) minmax(0,1fr) 96px;gap:10px;margin-bottom:13px}.performance-kpi{min-width:0;min-height:88px;padding:14px 16px;border:1px solid var(--line);border-radius:13px;background:var(--panel);display:flex;flex-direction:column;justify-content:center}.performance-kpi b{font-size:21px;line-height:1.05;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:clip}.performance-kpi small{margin-top:8px;color:var(--muted);font-size:7.5px;line-height:1.15;text-transform:uppercase;letter-spacing:.045em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.performance-kpi.compact{padding:14px 10px;text-align:center;align-items:center}.performance-kpi.compact b{font-size:21px}.performance-kpi.compact small{text-align:center;max-width:100%}.performance-kpi.score{background:color-mix(in srgb,var(--panel) 88%,var(--panel-2));padding-left:17px;padding-right:17px}'+
- '.live-violation-card-head{align-items:flex-start}.live-violation-badges{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}.live-violation-card-actions{display:flex;justify-content:flex-end;gap:8px;padding:10px 18px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--panel-2) 45%,transparent)}.live-violation-card-actions .btn{min-width:108px}@media(max-width:700px){.live-violation-card-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:14px 14px 12px}.live-violation-badges{justify-content:flex-end}.live-violation-badges .pill{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.live-violation-card-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;padding:10px 14px 12px}.live-violation-card-actions .btn{width:100%;min-width:0;height:40px;padding:0 10px;white-space:nowrap}.live-violation-card-actions .live-violation-message{grid-column:1/-1}}'+
- '.live-list{display:grid;gap:7px}.live-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:11px;background:var(--panel-2)}.live-row small{display:block;color:var(--muted);font-size:8px;margin-top:3px}.player-timer-strip{margin-top:10px;padding:8px 10px;border:1px solid color-mix(in srgb,var(--red) 28%,var(--line));border-radius:10px;background:color-mix(in srgb,var(--red) 7%,var(--panel-2));display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:9px}.player-timer-strip b{margin-left:auto;font-variant-numeric:tabular-nums}.player-timer-strip small{width:100%;color:var(--muted);font-size:8px}.home-timer-right{text-align:right;display:grid;gap:4px;justify-items:end}.home-timer-right strong{font-variant-numeric:tabular-nums}'+
+ '.live-list{display:grid;gap:7px}.live-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:11px;background:var(--panel-2)}.live-row small{display:block;color:var(--muted);font-size:8px;margin-top:3px}'+
  '.live-empty-state{padding:24px;text-align:center;border:1px dashed var(--line);border-radius:13px;color:var(--muted);font-size:10px;background:var(--panel)}'+
  '.live-status{font-size:9px;color:var(--muted);min-height:16px}'+
  '@media(max-width:900px){.live-panel-grid,.performance-panel-grid{grid-template-columns:1fr}.live-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.performance-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.performance-kpi,.performance-kpi.compact{min-height:82px;padding:13px 14px;text-align:left;align-items:flex-start}.performance-kpi small,.performance-kpi.compact small{text-align:left}.live-form-row{grid-template-columns:1fr}.live-import-frame{min-height:580px}}';
@@ -542,7 +524,7 @@ function phaseMultiplier2(event,phase,dateValue){
  // Date-only recording days are already UTC; datetime-local inputs must first
  // be converted to UTC, exactly as the timestamp sent to Supabase is.
  const raw=String(dateValue||''),dateOnly=/^\d{4}-\d{2}-\d{2}$/.test(raw);
- const parsed=dateOnly?null:raw?utcInputDate2(raw):null;
+ const parsed=dateOnly?null:raw?new Date(raw):null;
  const day=dateOnly?raw:parsed&&!Number.isNaN(parsed.getTime())?
    parsed.toISOString().slice(0,10):'';
  return event==='Strongest Governor'&&((phase==='sg2'&&day==='2026-09-22')||
@@ -581,7 +563,7 @@ function renderAddLive(){
  '<div id="addScreenPanel"><section class="card"><div class="card-head"><div><div class="card-title">ScreenRecording</div><div class="card-sub">Event und Tag auswählen · Video prüfen · Treffer speichern.</div></div></div><div class="card-body"><div id="liveImporterHost">Verfügbare Events werden geladen …</div></div></section></div>'+
  '<div id="addManualPanel" hidden><div class="live-panel-grid"><section class="card"><div class="card-head"><div><div class="card-title">Manuell eintragen</div><div class="card-sub">Nur aktuell freigegebene Events.</div></div></div><div class="card-body"><form id="liveManualForm" class="live-form">'+
  '<label>Spieler<select id="liveManualPlayer"></select></label><label>Event<select id="liveManualEvent"></select></label><label>Phase<select id="liveManualPhase"></select></label>'+
- '<div class="live-form-row"><label>Punkte<input id="liveManualScore" inputmode="numeric"></label><label>Zeitpunkt (UTC)<input id="liveManualOccurred" type="datetime-local"></label></div>'+
+ '<div class="live-form-row"><label>Punkte<input id="liveManualScore" inputmode="numeric"></label><label>Zeitpunkt<input id="liveManualOccurred" type="datetime-local"></label></div>'+
  '<label>Notiz<textarea id="liveManualNote"></textarea></label><div id="liveManualPreview" class="live-note"></div>'+
  '<button class="btn primary" type="submit">Verstoß speichern</button><div id="liveManualStatus" class="live-status"></div></form></div></section>'+
  '<section class="card"><div class="card-head"><div><div class="card-title">Regelprüfung</div><div class="card-sub">Grenze aus den Allianz-Einstellungen.</div></div></div><div class="card-body"><div id="liveRuleCard" class="live-empty-state">Event und Phase auswählen.</div></div></section></div></div>';
@@ -590,13 +572,13 @@ function renderAddLive(){
 }
 async function setupAddData2(){
  let opts=[];try{opts=await rpc('get_open_event_entry_options',{})||[]}catch(e){console.warn(e)}
-  S.eventOptions=opts;window.NAP_V2_SCREEN_OPTIONS=opts.filter(x=>['Strongest Governor','Alliance Brawl','Officer Project','Armament Competition'].includes(x.event_name));window.NAP_V2_SCREEN_MANUAL_EVENTS=Object.entries(S.settings?.manual_event_entry_overrides||{}).filter(([,enabled])=>enabled===true).map(([event])=>event);
+ S.eventOptions=opts;window.NAP_V2_SCREEN_OPTIONS=opts.filter(x=>['Strongest Governor','Alliance Brawl','Officer Project','Armament Competition'].includes(x.event_name));
  const eventNames=[...new Set(opts.map(x=>x.event_name).filter(Boolean))];
  const options=eventNames.length?eventNames.map(x=>'<option value="'+E(x)+'">'+E(x)+'</option>').join(''):'<option value="">Kein Event freigegeben</option>';
  const me=document.getElementById('liveManualEvent');if(me)me.innerHTML=options;
  if(document.getElementById('liveImporterHost'))window.NAP_NATIVE_IMPORTER?.openLaw?.(true);
  const player=document.getElementById('liveManualPlayer');if(player)player.innerHTML=S.p.map(p=>'<option value="'+E(p.name||p.player_name)+'">'+E(p.name||p.player_name)+' · '+E(p.game_id||'–')+'</option>').join('');
- const occ=document.getElementById('liveManualOccurred');if(occ)occ.value=new Date().toISOString().slice(0,16)
+ const occ=document.getElementById('liveManualOccurred');if(occ){const d=new Date(Date.now()-new Date().getTimezoneOffset()*60000);occ.value=d.toISOString().slice(0,16)}
  function syncPhases(){
    const event=me?.value||'',ph=document.getElementById('liveManualPhase'),source=S.eventOptions.find(x=>x.event_name===event)?.source_event_id,phases=PHASES2[event]||[['general','General',null]];
    if(ph)ph.innerHTML=phases.map(x=>'<option value="'+E(x[0])+'">'+E(x[1])+'</option>').join('');
@@ -614,9 +596,9 @@ function updateManualPreview2(sourceId){
 async function saveManualViolation2(e){
  e.preventDefault();const out=document.getElementById('liveManualStatus');out.textContent=actionWord2('saving');
  try{
-   const player=document.getElementById('liveManualPlayer').value,event=document.getElementById('liveManualEvent').value,phase=document.getElementById('liveManualPhase').value,note=document.getElementById('liveManualNote').value.trim()||null,occurred=utcInputIso2(document.getElementById('liveManualOccurred').value),source=S.eventOptions.find(x=>x.event_name===event)?.source_event_id,target=targetFor2(event,phase),score=Number(String(document.getElementById('liveManualScore').value||'').replace(/\D/g,'')),kind=(event==='Swordland Showdown'||event==='Tri-Alliance Clash')?'swordland':'overspend',mult=phaseMultiplier2(event,phase,document.getElementById('liveManualOccurred').value);
+   const player=document.getElementById('liveManualPlayer').value,event=document.getElementById('liveManualEvent').value,phase=document.getElementById('liveManualPhase').value,note=document.getElementById('liveManualNote').value.trim()||null,occurred=new Date(document.getElementById('liveManualOccurred').value).toISOString(),source=S.eventOptions.find(x=>x.event_name===event)?.source_event_id,target=targetFor2(event,phase),score=Number(String(document.getElementById('liveManualScore').value||'').replace(/\D/g,'')),kind=(event==='Swordland Showdown'||event==='Tri-Alliance Clash')?'swordland':'overspend',mult=phaseMultiplier2(event,phase,document.getElementById('liveManualOccurred').value);
    if(kind==='overspend'&&(!Number.isFinite(score)||score<=Number(target||0)*mult))throw Error(actionWord2('pointsMustExceed',{mult}));
-   await rpc('record_violation_fast',{p_player_name:player,p_event_name:event,p_phase_name:phase,p_kind:kind,p_score:kind==='swordland'?0:score,p_target_value:target,p_occurred_at:occurred,p_expiry_days:Number(S.settings?.violation_expiry_days||30),p_note:note});
+   await rpc('record_violation_fast',{p_player_name:player,p_event_name:event,p_phase_name:phase,p_kind:kind,p_score:kind==='swordland'?0:score,p_target_value:target,p_occurred_at:occurred,p_expiry_days:28,p_note:note});
    out.textContent=actionWord2('saved');await load();renderHome();renderPlayers();document.getElementById('liveManualScore').value='';
  }catch(err){out.textContent=err.message||String(err)}
 }
@@ -692,7 +674,7 @@ function renderNapLive(){
  if(liveNapTab==='exclusions'){
    body.innerHTML='<div class="live-panel-grid"><section class="card"><div class="card-head"><div><div class="card-title">Aktive Exclusions</div></div><span class="pill red">'+S.e.length+'</span></div><div class="card-body live-list">'+
    (S.e.length?S.e.map(x=>napRow2(x.player_name,(x.alliance_code||'')+' · Stufe '+x.level,(Number(x.level)===4&&x.alliance_code===S.a&&x.id?'<div class="hero-actions"><span class="pill">'+(x.end_at?E(D(x.end_at)):'∞')+'</span><button class="btn small secondary live-end-exclusion" data-id="'+E(x.id)+'">'+E(extendedActionWords2().endNow)+'</button></div>':'<span class="pill">'+(x.end_at?E(D(x.end_at)):'∞')+'</span>'))).join(''):'<div class="live-empty-state">Keine aktive Exclusion.</div>')+
-   '</div></section><section class="card"><div class="card-head"><div><div class="card-title">Manuelle Exclusion</div><div class="card-sub">Wie in 1.0: zusätzliche NAP-Exclusion anlegen.</div></div></div><div class="card-body"><form id="liveExclusionForm" class="live-form"><label>Spieler<input id="liveExPlayer" required></label><div class="live-form-row"><label>Stufe<select id="liveExLevel"><option value="3">3 · 24h</option><option value="4">4 · Extended</option></select></label><label>Ende (UTC)<input id="liveExEnd" type="datetime-local"></label></div><button class="btn primary" type="submit">Exclusion speichern</button><div id="liveExStatus" class="live-status"></div></form></div></section></div>';
+   '</div></section><section class="card"><div class="card-head"><div><div class="card-title">Manuelle Exclusion</div><div class="card-sub">Wie in 1.0: zusätzliche NAP-Exclusion anlegen.</div></div></div><div class="card-body"><form id="liveExclusionForm" class="live-form"><label>Spieler<input id="liveExPlayer" required></label><div class="live-form-row"><label>Stufe<select id="liveExLevel"><option value="3">3 · 24h</option><option value="4">4 · Extended</option></select></label><label>Ende<input id="liveExEnd" type="datetime-local"></label></div><button class="btn primary" type="submit">Exclusion speichern</button><div id="liveExStatus" class="live-status"></div></form></div></section></div>';
    document.getElementById('liveExclusionForm').onsubmit=saveManualExclusion2;document.querySelectorAll('.live-end-exclusion').forEach(b=>b.onclick=()=>endExclusion2(b.dataset.id));return;
  }
  if(liveNapTab==='bans'){
@@ -723,7 +705,7 @@ async function endExclusion2(id){
 }
 async function saveManualExclusion2(e){
  e.preventDefault();const out=document.getElementById('liveExStatus');out.textContent=actionWord2('saving');
- try{const name=document.getElementById('liveExPlayer').value.trim(),level=Number(document.getElementById('liveExLevel').value),end=document.getElementById('liveExEnd').value;await rpc('create_manual_nap_exclusion',{p_player_name:name,p_level:level,p_started_at:new Date().toISOString(),p_end_at:end?utcInputIso2(end):null});await load();out.textContent=actionWord2('saved');renderNapLive()}catch(err){out.textContent=err.message||String(err)}
+ try{const name=document.getElementById('liveExPlayer').value.trim(),level=Number(document.getElementById('liveExLevel').value),end=document.getElementById('liveExEnd').value;await rpc('create_manual_nap_exclusion',{p_player_name:name,p_level:level,p_started_at:new Date().toISOString(),p_end_at:end?new Date(end).toISOString():null});await load();out.textContent=actionWord2('saved');renderNapLive()}catch(err){out.textContent=err.message||String(err)}
 }
 async function saveBan2(e){
  e.preventDefault();const out=document.getElementById('liveBanStatus');out.textContent=actionWord2('saving');
@@ -788,7 +770,7 @@ let law9SelectedCycle2=null;
 function law9CycleLabel2(x){
  const dt=x?.prep_start?new Date(x.prep_start):null;
  if(!dt||Number.isNaN(dt.getTime()))return 'KvK';
- return dt.toLocaleDateString(L()==='de'?'de-DE':L()==='fr'?'fr-FR':L()==='es'?'es-ES':'en-GB',{month:'short',year:'numeric',timeZone:'UTC'});
+ return dt.toLocaleDateString(L()==='de'?'de-DE':L()==='fr'?'fr-FR':L()==='es'?'es-ES':'en-GB',{month:'short',year:'numeric'});
 }
 function law9Normalized2(v){
  if(v==null||!Number.isFinite(Number(v)))return '–';
@@ -830,12 +812,12 @@ async function renderKvkLive(){
  }catch(err){v.innerHTML+='<div class="live-empty-state">'+E(err.message||String(err))+'</div>'}
 }
 async function saveMemberPlan2(e){
- e.preventDefault();if(isReadOnly2())return;const form=e.currentTarget,count=Number(String(form.querySelector('input').value||'').replace(/\D/g,''));
+ e.preventDefault();const form=e.currentTarget,count=Number(String(form.querySelector('input').value||'').replace(/\D/g,''));
  if(!Number.isInteger(count)||count<0||count>200){alert(actionWord2('memberCountCheck'));return}
  try{await rpc('set_law9_member_override',{p_cycle_id:S.law9.cycle.id,p_alliance_code:form.dataset.code,p_member_count:count});await renderKvkLive()}catch(err){alert(err.message||String(err))}
 }
 async function savePrepScore2(e){
- e.preventDefault();if(isReadOnly2())return;const form=e.currentTarget,score=Number(String(form.querySelector('input').value||'').replace(/\D/g,''));try{await rpc('upsert_law9_prep_score',{p_cycle_id:S.law9.cycle.id,p_alliance_code:form.dataset.code,p_prep_score:score});await renderKvkLive()}catch(err){alert(err.message||String(err))}
+ e.preventDefault();const form=e.currentTarget,score=Number(String(form.querySelector('input').value||'').replace(/\D/g,''));try{await rpc('upsert_law9_prep_score',{p_cycle_id:S.law9.cycle.id,p_alliance_code:form.dataset.code,p_prep_score:score});await renderKvkLive()}catch(err){alert(err.message||String(err))}
 }
 async function loadKvkTop2(id){
  const box=document.getElementById('liveKvkTop');if(!box)return;
@@ -896,15 +878,15 @@ function openLawReport2(key){
  modal.innerHTML='<div class="modal-card"><div class="modal-head"><div><b>Law '+E(l.display_number)+' melden</b><small>Fall bleibt für die meldende Allianz privat.</small></div><button class="icon-btn" id="liveLawClose">×</button></div><form id="liveLawForm" class="live-form">'+
  '<div class="live-form-row"><label>Verursacher / Beschuldigter<input id="liveLawSubject" required></label><label>Player ID<input id="liveLawSubjectId"></label></div>'+
  '<div class="live-form-row"><label>Betroffene Partei<input id="liveLawAffected"></label><label>Betroffene Player ID<input id="liveLawAffectedId"></label></div>'+
- '<label>Zeitpunkt (UTC)<input id="liveLawOccurred" type="datetime-local" required></label><label>Beschreibung<textarea id="liveLawDesc" required></textarea></label><label>Evidence-Notiz<textarea id="liveLawNote"></textarea></label><label>Screenshots / Evidence<input id="liveLawFiles" type="file" accept="image/png,image/jpeg,image/webp" multiple></label>'+
+ '<label>Zeitpunkt<input id="liveLawOccurred" type="datetime-local" required></label><label>Beschreibung<textarea id="liveLawDesc" required></textarea></label><label>Evidence-Notiz<textarea id="liveLawNote"></textarea></label><label>Screenshots / Evidence<input id="liveLawFiles" type="file" accept="image/png,image/jpeg,image/webp" multiple></label>'+
  '<button class="btn primary" type="submit">Fall speichern</button><div id="liveLawStatus" class="live-status"></div></form></div>';document.body.appendChild(modal);
- document.getElementById('liveLawOccurred').value=new Date().toISOString().slice(0,16);document.getElementById('liveLawClose').onclick=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)modal.remove()};document.getElementById('liveLawForm').onsubmit=e=>saveLawReport2(e,l);
+ const d=new Date(Date.now()-new Date().getTimezoneOffset()*60000);document.getElementById('liveLawOccurred').value=d.toISOString().slice(0,16);document.getElementById('liveLawClose').onclick=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)modal.remove()};document.getElementById('liveLawForm').onsubmit=e=>saveLawReport2(e,l);
 }
 async function saveLawReport2(e,l){
  e.preventDefault();const out=document.getElementById('liveLawStatus'),files=[...document.getElementById('liveLawFiles').files];out.textContent=actionWord2('saving');
  try{
   for(const f of files)if(!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>8388608)throw Error(actionWord2('lawImageRule'));
-  const d=await rpc('record_nap_law_violation_v2',{p_law_key:l.law_key,p_subject_label:document.getElementById('liveLawSubject').value.trim(),p_subject_game_id:document.getElementById('liveLawSubjectId').value.trim()||null,p_affected_party:document.getElementById('liveLawAffected').value.trim()||null,p_affected_game_id:document.getElementById('liveLawAffectedId').value.trim()||null,p_occurred_at:utcInputIso2(document.getElementById('liveLawOccurred').value),p_description:document.getElementById('liveLawDesc').value.trim(),p_evidence_note:document.getElementById('liveLawNote').value.trim()||null,p_sanction_type:null,p_sanction_start:null,p_sanction_end:null});
+  const d=await rpc('record_nap_law_violation_v2',{p_law_key:l.law_key,p_subject_label:document.getElementById('liveLawSubject').value.trim(),p_subject_game_id:document.getElementById('liveLawSubjectId').value.trim()||null,p_affected_party:document.getElementById('liveLawAffected').value.trim()||null,p_affected_game_id:document.getElementById('liveLawAffectedId').value.trim()||null,p_occurred_at:new Date(document.getElementById('liveLawOccurred').value).toISOString(),p_description:document.getElementById('liveLawDesc').value.trim(),p_evidence_note:document.getElementById('liveLawNote').value.trim()||null,p_sanction_type:null,p_sanction_start:null,p_sanction_end:null});
   const vid=d?.id;if(!vid)throw Error(actionWord2('caseIdMissing'));const uid=ses?.user?.id||'user';
   for(const file of files){const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_'),path=uid+'/'+vid+'/'+Date.now()+'-'+safe;await uploadStorage2('nap-law-evidence',path,file);await ins('nap_law_evidence',{violation_id:vid,storage_path:path,file_name:file.name,mime_type:file.type,size_bytes:file.size})}
   document.getElementById('liveLawModal')?.remove();liveLawTab='cases';await renderLawsLive();
@@ -970,7 +952,11 @@ const ACTIVITY_EXTRA_TITLES2={
  }
 };
 function activityTitle2(a){
- const act=String(a?.action||''),extra=(ACTIVITY_EXTRA_TITLES2[L()]||ACTIVITY_EXTRA_TITLES2.de)[act];
+ const act=String(a?.action||'');
+ if(act==='violation_deleted'){
+  return ({de:'Verstoß gelöscht',en:'Violation deleted',fr:'Infraction supprimée',es:'Infracción eliminada'}[L()]||'Verstoß gelöscht');
+ }
+ const extra=(ACTIVITY_EXTRA_TITLES2[L()]||ACTIVITY_EXTRA_TITLES2.de)[act];
  if(extra)return extra;
  const map={
   violation_created:'Verstoß eingetragen',violation_created_vnext:'Verstoß eingetragen',violation_updated:'Verstoß aktualisiert',
@@ -992,15 +978,20 @@ function activityTitle2(a){
  return map[act]||act.replaceAll('_',' ');
 }
 function activityMeta2(a){
- const d=a?.details||{},p={...(d.public||{}),...(d.private||{}),...d},bits=[];
+ const d=a?.details||{},p={...(d.public||{}),...(d.private||{}),...d},bits=[],isDeleted=String(a?.action||'')==='violation_deleted';
  if(p.player_name)bits.push(p.player_name);
  if(p.event_name)bits.push(p.event_name);
  if(p.phase_name)bits.push(p.phase_name);
+ if(isDeleted&&p.violation_day){
+  const dateLabel={de:'Verstoßdatum',en:'Violation date',fr:'Date de l’infraction',es:'Fecha de la infracción'}[L()]||'Verstoßdatum';
+  bits.push(dateLabel+': '+p.violation_day);
+ }
  if(p.from_alliance&&p.to_alliance)bits.push(p.from_alliance+' → '+p.to_alliance);
  if(p.score!=null)bits.push(N(p.score));
-  if(p.deleted_by_player_name){const label={de:'Gelöscht von',en:'Deleted by',fr:'Supprimé par',es:'Eliminado por'}[L()]||'Gelöscht von';bits.push(label+': '+p.deleted_by_player_name+(p.deleted_by_alliance_rank_label?' · '+p.deleted_by_alliance_rank_label:''))}
  if(a?.reason){
-  const label={de:'Grund',en:'Reason',fr:'Motif',es:'Motivo'}[L()]||'Grund';
+  const label=isDeleted
+   ?({de:'Löschkommentar',en:'Deletion comment',fr:'Commentaire de suppression',es:'Comentario de eliminación'}[L()]||'Löschkommentar')
+   :({de:'Grund',en:'Reason',fr:'Motif',es:'Motivo'}[L()]||'Grund');
   bits.push(label+': '+a.reason);
  }
  return bits.join(' · ');
@@ -1035,13 +1026,21 @@ async function loadMoreActivity2(){
  }catch(err){if(btn){btn.disabled=false;btn.textContent='Weitere Einträge laden'}alert(err.message||String(err))}
  finally{activityLoading2=false}
 }
+function activityScopeText2(){
+ return ({
+  de:'Serverweites Aktivitätsprotokoll: Bei anderen Allianzen werden ausschließlich öffentliche Log-Informationen angezeigt. Bei gelöschten Verstößen sind Spieler, Event/Phase, Verstoßdatum und Löschkommentar serverweit sichtbar; Punkte und andere private Verstoßdetails bleiben verborgen.',
+  en:'Server-wide activity log: Other alliances only see public log information. For deleted violations, the player, event/phase, violation date and deletion comment are visible server-wide; scores and other private violation details remain hidden.',
+  fr:'Journal d’activité serveur : les autres alliances ne voient que les informations publiques. Pour les infractions supprimées, le joueur, l’événement/la phase, la date de l’infraction et le commentaire de suppression sont visibles sur tout le serveur ; les scores et autres détails privés restent masqués.',
+  es:'Registro de actividad del servidor: las demás alianzas solo ven información pública. En las infracciones eliminadas, el jugador, evento/fase, fecha de la infracción y comentario de eliminación son visibles para todo el servidor; las puntuaciones y otros detalles privados permanecen ocultos.'
+ }[L()]||'Serverweites Aktivitätsprotokoll');
+}
 function paintActivity2(){
  const v=document.getElementById('view-activity');if(!v)return;
  const types=[['all','Alle'],['uploads','Uploads'],['players','Spieler'],['events','Events'],['violations','Verstöße'],['deleted','Gelöscht']];
  const rows=S.activity||[],alliances=activityAlliances2||[];
  v.innerHTML='<div class="hero"><div><div class="kicker">AKTIVITÄT · LIVE</div><h1>Filterbarer Audit-Feed.</h1><p>Uploads, Spieleränderungen, Verstöße und Maßnahmen.</p></div><div class="hero-actions"><button id="liveActivityRefresh" class="btn secondary">↻ Aktualisieren</button></div></div>'+
  '<div class="toolbar"><div class="toolbar-left">'+types.map(x=>'<button class="filter-chip '+(activityType2===x[0]?'active':'')+'" data-acttype="'+x[0]+'">'+x[1]+'</button>').join('')+'</div><div class="toolbar-right"><label class="live-activity-alliance-label"><span>Allianz</span><select id="liveActivityAlliance" aria-label="Allianz"><option value="all">Alle Allianzen</option>'+alliances.map(a=>'<option value="'+E(a)+'" '+(activityAlliance2===a?'selected':'')+'>'+E(a)+'</option>').join('')+'</select></label></div></div>'+
- '<div class="live-note live-audit-scope">Serverweites Aktivitätsprotokoll: Bei anderen Allianzen werden ausschließlich öffentliche Log-Informationen angezeigt. Private Verstoßdetails, Gründe und Kommentare bleiben verborgen.</div>'+
+ '<div class="live-note live-audit-scope">'+E(activityScopeText2())+'</div>'+
  '<section class="card"><div class="card-body live-list">'+(rows.length?rows.map(a=>'<div class="live-row"><div><b>'+E(a.alliance_code||'System')+' · '+E(activityTitle2(a))+'</b><small>'+E(activityMeta2(a))+'</small></div><time class="muted tiny">'+E(D(a.created_at))+'</time></div>').join(''):'<div class="live-empty-state">Keine Aktivitäten für diesen Filter.</div>')+'</div></section>'+(activityMore2?'<div class="hero-actions" style="margin-top:14px"><button type="button" class="btn secondary" id="liveActivityMore">Weitere Einträge laden</button></div>':'');
  v.querySelectorAll('[data-acttype]').forEach(b=>b.onclick=async()=>{if(activityLoading2)return;activityType2=b.dataset.acttype;activityOffset2=0;await renderActivityLive()});
  v.querySelector('#liveActivityAlliance')?.addEventListener('change',async e=>{if(activityLoading2)return;activityAlliance2=e.target.value;activityOffset2=0;await renderActivityLive()});
@@ -1055,17 +1054,17 @@ async function renderSettingsLive(){
  const v=document.getElementById('view-settings');if(!v)return;let opts=[];try{opts=await rpc('get_open_event_entry_options',{})||[]}catch{}S.eventOptions=opts;
  let features=null;try{features=await rpc('get_performance_feature_settings',{})}catch{}S.features=features;
  const s=S.settings||{},over=s.manual_event_entry_overrides||{},events=['Strongest Governor','Alliance Brawl','Officer Project','Armament Competition','Swordland Showdown','Tri-Alliance Clash'];
-  v.innerHTML='<div class="hero"><div><div class="kicker">EINSTELLUNGEN · LIVE</div><h1>Konfiguration getrennt von den Laws.</h1><p>Warnfenster, Event-Verfügbarkeit und Performance.</p></div></div>'+
-  '<div class="live-tabs"><button class="live-tab active" data-settab="general">Allgemein</button><button class="live-tab" data-settab="events">Event-Verfügbarkeit</button><button class="live-tab" data-settab="performance">Performance</button></div>'+
-  '<div id="liveSettingsGeneral"><div class="live-panel-grid"><section class="card"><div class="card-head"><div><div class="card-title">Verstoß-Fenster</div></div></div><div class="card-body"><form id="liveSettingsForm" class="live-form"><div class="live-form-row"><label>Warnfenster · Tage<input id="liveWarnDays" type="number" min="1" value="'+E(s.warning_window_days||7)+'"></label></div><div class="live-note">Verstöße bleiben serverweit fest 28 Tage gültig. Diese Dauer kann nicht mehr pro Allianz geändert werden.</div><button class="btn primary">Speichern</button><div id="liveSettingsStatus" class="live-status"></div></form></div></section><section class="card"><div class="card-head"><div><div class="card-title">Allianz</div></div></div><div class="card-body"><div class="live-stat"><b>'+E(S.a)+'</b><small>eingeloggte Allianz</small></div></div></section></div></div>'+
+ v.innerHTML='<div class="hero"><div><div class="kicker">EINSTELLUNGEN · LIVE</div><h1>Konfiguration getrennt von den Laws.</h1><p>Zielwerte, Event-Verfügbarkeit und Performance.</p></div></div>'+
+ '<div class="live-tabs"><button class="live-tab active" data-settab="general">Allgemein</button><button class="live-tab" data-settab="events">Event-Verfügbarkeit</button><button class="live-tab" data-settab="targets">Zielwerte</button><button class="live-tab" data-settab="performance">Performance</button></div>'+
+ '<div id="liveSettingsGeneral"><div class="live-panel-grid"><section class="card"><div class="card-head"><div><div class="card-title">Warnfenster</div></div></div><div class="card-body"><form id="liveSettingsForm" class="live-form"><div class="live-form-row"><label>Warnfenster · Tage<input id="liveWarnDays" type="number" min="1" value="'+E(s.warning_window_days||7)+'"></label></div><div class="live-note">Law-14-Verstöße sind serverweit fest 28 Tage gültig. Diese Dauer kann nicht pro Allianz geändert werden.</div><button class="btn primary">Speichern</button><div id="liveSettingsStatus" class="live-status"></div></form></div></section><section class="card"><div class="card-head"><div><div class="card-title">Allianz</div></div></div><div class="card-body"><div class="live-stat"><b>'+E(S.a)+'</b><small>eingeloggte Allianz</small></div></div></section></div></div>'+
  '<div id="liveSettingsEvents" hidden><section class="card"><div class="card-head"><div><div class="card-title">Event-Verfügbarkeit</div><div class="card-sub">Automatische Fenster plus manuelle Freigabe.</div></div></div><div class="card-body live-list">'+events.map(ev=>{const auto=opts.some(x=>x.event_name===ev),always=ev==='Swordland Showdown'||ev==='Tri-Alliance Clash',manual=over[ev]===true;return '<div class="live-row"><div><b>'+E(ev)+'</b><small>'+(always?'immer offen':auto?'automatisch offen':manual?'manuell offen':'geschlossen')+'</small></div>'+(always?'<span class="pill blue">immer</span>':'<button class="btn small secondary live-event-override" data-event="'+E(ev)+'" data-enabled="'+(manual?'1':'0')+'">'+(manual?'Freigabe entfernen':'manuell aktivieren')+'</button>')+'</div>'}).join('')+'</div></section></div>'+
-
+ '<div id="liveSettingsTargets" hidden><section class="card"><div class="card-head"><div><div class="card-title">Law-14 Zielwerte</div><div class="card-sub">Aktuelle persönliche Zielwerte je Event/Phase.</div></div></div><div class="card-body"><form id="liveTargetsForm" class="live-form"><div class="live-list">'+settingTargetRows2()+'</div><button class="btn primary">Zielwerte speichern</button><div id="liveTargetsStatus" class="live-status"></div></form></div></section></div>'+
  '<div id="liveSettingsPerformance" hidden><div class="live-panel-grid"><section class="card"><div class="card-head"><div><div class="card-title">KvK Top 200</div></div></div><div class="card-body"><button id="liveFeatKvk" class="btn secondary">'+(features?.kvk_top200_enabled!==false?'✓ sichtbar':'ausgeblendet')+'</button></div></section><section class="card"><div class="card-head"><div><div class="card-title">Alliance Mobilization</div></div></div><div class="card-body"><button id="liveFeatMob" class="btn secondary">'+(features?.mobilization_enabled!==false?'✓ sichtbar':'ausgeblendet')+'</button></div></section></div></div>';
-  const panels={general:'liveSettingsGeneral',events:'liveSettingsEvents',performance:'liveSettingsPerformance'};v.querySelectorAll('[data-settab]').forEach(b=>b.onclick=()=>{v.querySelectorAll('[data-settab]').forEach(x=>x.classList.toggle('active',x===b));Object.entries(panels).forEach(([k,id])=>document.getElementById(id).hidden=k!==b.dataset.settab)});
-  document.getElementById('liveSettingsForm').onsubmit=saveGeneralSettings2;v.querySelectorAll('.live-event-override').forEach(b=>b.onclick=()=>toggleEventOverride2(b));document.getElementById('liveFeatKvk').onclick=()=>toggleFeature2('kvk');document.getElementById('liveFeatMob').onclick=()=>toggleFeature2('mob');
+ const panels={general:'liveSettingsGeneral',events:'liveSettingsEvents',targets:'liveSettingsTargets',performance:'liveSettingsPerformance'};v.querySelectorAll('[data-settab]').forEach(b=>b.onclick=()=>{v.querySelectorAll('[data-settab]').forEach(x=>x.classList.toggle('active',x===b));Object.entries(panels).forEach(([k,id])=>document.getElementById(id).hidden=k!==b.dataset.settab)});
+ document.getElementById('liveSettingsForm').onsubmit=saveGeneralSettings2;document.getElementById('liveTargetsForm').onsubmit=saveTargets2;v.querySelectorAll('.live-event-override').forEach(b=>b.onclick=()=>toggleEventOverride2(b));document.getElementById('liveFeatKvk').onclick=()=>toggleFeature2('kvk');document.getElementById('liveFeatMob').onclick=()=>toggleFeature2('mob');
 }
 async function upsertSettings2(body){return q(C.u+'/rest/v1/alliance_settings?alliance_code=eq.'+encodeURIComponent(S.a),{method:'PATCH',headers:{...(await h(true)),Prefer:'return=representation'},body:JSON.stringify({...body,updated_at:new Date().toISOString()})})}
-async function saveGeneralSettings2(e){e.preventDefault();const out=document.getElementById('liveSettingsStatus');out.textContent=actionWord2('saving');try{const rows=await upsertSettings2({warning_window_days:Number(document.getElementById('liveWarnDays').value)||7});S.settings={...S.settings,...rows?.[0]};out.textContent=actionWord2('saved')}catch(err){out.textContent=err.message||String(err)}}
+async function saveGeneralSettings2(e){e.preventDefault();const out=document.getElementById('liveSettingsStatus');out.textContent=actionWord2('saving');try{const rows=await upsertSettings2({warning_window_days:Number(document.getElementById('liveWarnDays').value)||7});S.settings={...S.settings,...rows?.[0],violation_expiry_days:28};out.textContent=actionWord2('saved')}catch(err){out.textContent=err.message||String(err)}}
 async function saveTargets2(e){e.preventDefault();const out=document.getElementById('liveTargetsStatus'),targets={...(S.settings?.event_targets||{})};document.querySelectorAll('.live-target-input').forEach(i=>targets[i.dataset.key]=i.value?Number(i.value):null);out.textContent=actionWord2('saving');try{const rows=await upsertSettings2({event_targets:targets});S.settings={...S.settings,...rows?.[0]};out.textContent=actionWord2('saved')}catch(err){out.textContent=err.message||String(err)}}
 async function toggleEventOverride2(btn){try{await rpc('set_manual_event_entry_override',{p_event_name:btn.dataset.event,p_enabled:btn.dataset.enabled!=='1'});await load();renderSettingsLive()}catch(err){alert(err.message||String(err))}}
 async function toggleFeature2(which){const f=S.features||{kvk_top200_enabled:true,mobilization_enabled:true},next={kvk_top200_enabled:f.kvk_top200_enabled!==false,mobilization_enabled:f.mobilization_enabled!==false};if(which==='kvk')next.kvk_top200_enabled=!next.kvk_top200_enabled;else next.mobilization_enabled=!next.mobilization_enabled;try{S.features=await rpc('set_performance_feature_settings',{p_kvk_top200_enabled:next.kvk_top200_enabled,p_mobilization_enabled:next.mobilization_enabled});await renderSettingsLive()}catch(err){alert(err.message||String(err))}}
@@ -1270,68 +1269,59 @@ async function renderWelcomeLanguageQueue2(){
 }
 function languageEditor2(P){
  const selected=new Set((P.languages||[]).map(x=>String(x).toLowerCase()));
- return '<details class="live-language-editor"><summary>🌐 Sprachen bearbeiten</summary><div class="live-language-grid">'+LANG_OPTIONS2.map(x=>'<label class="live-language-option"><input type="checkbox" value="'+E(x[0])+'" '+(selected.has(x[0])?'checked':'')+'><span>'+E(x[1])+'</span></label>').join('')+'</div><div class="hero-actions" style="margin-top:10px"><button type="button" class="btn secondary" id="liveSaveLanguages" data-player-id="'+E(P.id)+'">Sprachen speichern</button><span id="liveLanguageStatus" class="live-status"></span></div></details>';
+ return '<details class="live-language-editor"><summary>🌐 Sprachen bearbeiten</summary><div class="live-language-grid">'+LANG_OPTIONS2.map(x=>'<label class="live-language-option"><input type="checkbox" value="'+E(x[0])+'" '+(selected.has(x[0])?'checked':'')+'><span>'+E(x[1])+'</span></label>').join('')+'</div><div class="hero-actions" style="margin-top:10px"><button type="button" class="btn secondary" id="liveSaveLanguages">Sprachen speichern</button><span id="liveLanguageStatus" class="live-status"></span></div></details>';
 }
 async function saveLanguages2(P){
- const out=document.getElementById('liveLanguageStatus');
- const editor=document.querySelector('.live-language-editor');
- const langs=[...(editor?.querySelectorAll('.live-language-option input:checked')||[])].map(x=>x.value);
- if(!P?.id){if(out)out.textContent='Spieler konnte nicht geladen werden.';return}
- if(out)out.textContent=actionWord2('saving');
+ const out=document.getElementById('liveLanguageStatus'),langs=[...document.querySelectorAll('.live-language-option input:checked')].map(x=>x.value);if(out)out.textContent=actionWord2('saving');
  try{
-   const updated=await rpc('set_player_languages',{p_player_id:P.id,p_languages:langs});
-   const idx=S.p.findIndex(x=>String(x.id)===String(P.id));
-   if(idx>=0)S.p[idx]=updated;
-   P.languages=updated?.languages||langs;
+   const rows=await upd('players',P.id,{languages:langs}),updated=rows?.[0]||{...P,languages:langs},idx=S.p.findIndex(x=>x.id===P.id);if(idx>=0)S.p[idx]=updated;
    if(out)out.textContent=actionWord2('saved');
-   const line=document.querySelector('.profile-main .muted.small');
-   if(line)line.innerHTML='Player ID '+E(updated?.game_id||P.game_id||'–')+' · <span class="pill">'+E(S.a)+'</span> · '+E((updated?.languages||langs).map(languageName2).join(' / ')||'–');
- }catch(err){if(out)out.textContent=err?.message||String(err)}
+   const line=document.querySelector('.profile-alliance-line');if(line)line.innerHTML='Player ID '+E(updated.game_id||'–')+' · '+allianceBadge2(S.a)+' · '+E(langs.map(languageName2).join(' / ')||'–');
+ }catch(err){if(out)out.textContent=err.message||String(err)}
 }
-if(!window.__NAP2_LANGUAGE_SAVE_DELEGATION){
- window.__NAP2_LANGUAGE_SAVE_DELEGATION=true;
- document.addEventListener('click',e=>{
-   const btn=e.target instanceof Element?e.target.closest('#liveSaveLanguages'):null;
-   if(!btn)return;
-   e.preventDefault();
-   e.stopPropagation();
-   const id=String(btn.getAttribute('data-player-id')||'');
-   const P=S.p.find(x=>String(x.id)===id);
-   saveLanguages2(P);
- },true);
-}
+const UNAFFILIATED_WORDS2={
+ de:{alliance:'Allianzlos',tracking:'Tracking'},
+ en:{alliance:'Alliance-less',tracking:'Tracking'},
+ fr:{alliance:'Sans alliance',tracking:'Suivi'},
+ es:{alliance:'Sin alianza',tracking:'Seguimiento'}
+};
+function unaffiliatedWord2(key){return (UNAFFILIATED_WORDS2[L()]||UNAFFILIATED_WORDS2.de)[key]||key}
 function renderPlayers2(){
-  const g=document.getElementById('playerGrid');if(!g)return;
-  const w=playerCaseWords2(),tw=timerViewWords2();
-  g.innerHTML=S.p.map(P=>{
-   const name=P.name||P.player_name||'',V=vv(name),law=V.filter(isLaw14Case2),internal=V.filter(isInternalCase2),
-    state=sanctionState2(name),l=state.level,last=V[0],
-    status=sanctionStatus2(state.currentSanction,state.currentViolation),val=status.short,
-    timer=status.key==='active'&&state.currentSanction?.end_at?state.currentSanction:null;
-   return '<div class="player-card" data-p="'+E(name)+'" data-has-entry="'+(V.length||ss(name).length?'1':'0')+'" data-attendance="'+(internal.length?'1':'0')+'" data-search="'+E((name+' '+(P.game_id||'')).toLowerCase())+'">'+
-    '<div class="player-card-top"><div class="player-meta">'+avatarHtml(P,'player-avatar')+'<div><div class="player-name">'+E(name)+'</div><div class="player-id">'+E(P.game_id||'–')+'</div></div></div>'+allianceBadge2(S.a)+'</div>'+
-    '<div class="metric-row"><div class="metric"><b>'+law.length+'</b><span>'+E(w.law)+'</span></div><div class="metric"><b>'+l+'</b><span>'+E(w.stage)+'</span></div><div class="metric"><b>'+E(val)+'</b><span>'+E(w.status)+'</span></div></div>'+
-    (timer?'<div class="player-timer-strip"><span>⏱ '+E(tw.level)+' '+E(timer.level)+'</span><b data-timer-end="'+E(timer.end_at)+'">'+E(timerRemaining2(timer.end_at))+'</b><small>'+E(tw.ends)+': '+E(D(timer.end_at))+'</small></div>':'')+
-    '<div class="player-card-foot">'+(internal.length?'<span class="pill blue">'+E(w.internal)+' · '+internal.length+'</span>':'<span></span>')+'<span class="muted tiny">'+(last?E(D(last.occurred_at)):'–')+'</span></div></div>';
-  }).join('')||'<div class="live-empty-state">Keine Spieler.</div>';
-  g.querySelectorAll('[data-p]').forEach(c=>c.onclick=()=>openProfile2(c.dataset.p));if(typeof applyPlayerFilters==='function')applyPlayerFilters();renderWelcomeLanguageQueue2();refreshSanctionTimerLabels2();
+ const g=document.getElementById('playerGrid');if(!g)return;
+ const w=playerCaseWords2();
+ g.innerHTML=S.p.map(P=>{
+  const name=P.name||P.player_name||'',V=vv(name),law=V.filter(isLaw14Case2),internal=V.filter(isInternalCase2),
+   pool=P.alliance_code==null||P._unaffiliated===true,trackingCount=Number(P.tracking_count||0),
+   state=sanctionState2(name),l=pool?0:state.level,last=V[0],
+   status=pool?null:sanctionStatus2(state.currentSanction,state.currentViolation),
+   val=pool?(trackingCount?unaffiliatedWord2('tracking'):'–'):status.short,
+   lastAt=last?.occurred_at||P.tracking_last_at||null,
+   hasEntry=!!(V.length||ss(name).length||trackingCount),
+   allianceLabel=pool?unaffiliatedWord2('alliance'):(P.alliance_code||S.a);
+  return '<div class="player-card" data-p="'+E(name)+'" data-has-entry="'+(hasEntry?'1':'0')+'" data-attendance="'+(internal.length?'1':'0')+'" data-search="'+E((name+' '+(P.game_id||'')+' '+allianceLabel).toLowerCase())+'">'+
+   '<div class="player-card-top"><div class="player-meta">'+avatarHtml(P,'player-avatar')+'<div><div class="player-name">'+E(name)+'</div><div class="player-id">'+E(P.game_id||'–')+'</div></div></div><span class="pill '+(pool?'blue':'')+'">'+E(allianceLabel)+'</span></div>'+
+   '<div class="metric-row"><div class="metric"><b>'+law.length+'</b><span>'+E(w.law)+'</span></div><div class="metric"><b>'+l+'</b><span>'+E(w.stage)+'</span></div><div class="metric"><b>'+E(val)+'</b><span>'+E(w.status)+'</span></div></div>'+
+   '<div class="player-card-foot">'+(pool?'<span class="pill blue">'+E(unaffiliatedWord2('tracking'))+(trackingCount?' · '+trackingCount:'')+'</span>':(internal.length?'<span class="pill blue">'+E(w.internal)+' · '+internal.length+'</span>':'<span></span>'))+'<span class="muted tiny">'+(lastAt?E(D(lastAt)):'–')+'</span></div></div>';
+ }).join('')||'<div class="live-empty-state">Keine Spieler.</div>';
+ g.querySelectorAll('[data-p]').forEach(card=>card.onclick=()=>openProfile2(card.dataset.p));if(typeof applyPlayerFilters==='function')applyPlayerFilters();renderWelcomeLanguageQueue2();
 }
 function violationRule2(v){
  const phases=PHASES2[v.event_name]||[];
  return phases.find(x=>x[0]===v.phase_name)||[v.phase_name||'general',v.phase_name||'General',v.target_value??null];
 }
+function canDeleteViolation2(v){return !!v&&String(v.alliance_code||'')===String(S.a||'')}
 function openViolationEditor2(id){
  const v=S.v.find(x=>String(x.id)===String(id));if(!v)return;
  document.getElementById('liveViolationEditModal')?.remove();
  const modal=document.createElement('div');modal.id='liveViolationEditModal';modal.className='modal-backdrop';
- const events=Object.keys(PHASES2),date=new Date(v.occurred_at);const local=Number.isNaN(date.getTime())?'':date.toISOString().slice(0,16);
+ const events=Object.keys(PHASES2),date=new Date(v.occurred_at);const local=new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
  modal.innerHTML='<div class="modal-card"><div class="modal-head"><div><b>Verstoß korrigieren</b><small>'+E(v.player_name)+' · '+E(v.event_name||'')+'</small></div><button class="icon-btn" id="liveVioEditClose">×</button></div>'+
  '<form id="liveVioEditForm" class="live-form"><label>Spieler<input id="liveVioPlayer" value="'+E(v.player_name)+'" required></label>'+
  '<label>Event<select id="liveVioEvent">'+events.map(ev=>'<option '+(ev===v.event_name?'selected':'')+'>'+E(ev)+'</option>').join('')+'</select></label>'+
  '<label>Phase<select id="liveVioPhase"></select></label>'+
  '<div class="live-form-row" id="liveVioScoreRow"><label>Ziel<input id="liveVioTarget" inputmode="numeric" value="'+E(v.target_value??'')+'"></label><label>Punkte<input id="liveVioScore" inputmode="numeric" value="'+E(v.score??'')+'"></label></div>'+
- '<div id="liveVioThreshold" class="live-note"></div><label>Zeitpunkt (UTC)<input id="liveVioOccurred" type="datetime-local" value="'+E(local)+'"></label><label>Notiz<textarea id="liveVioNote" maxlength="500">'+E(v.note||'')+'</textarea></label>'+
- '<div class="hero-actions"><button class="btn primary" type="submit">Änderungen speichern</button><button class="btn danger" id="liveDeleteViolation" data-id="'+E(v.id)+'" type="button">Verstoß löschen</button></div><div id="liveVioEditStatus" class="live-status"></div></form></div>';
+ '<div id="liveVioThreshold" class="live-note"></div><label>Zeitpunkt<input id="liveVioOccurred" type="datetime-local" value="'+E(local)+'"></label><label>Notiz<textarea id="liveVioNote" maxlength="500">'+E(v.note||'')+'</textarea></label>'+
+ '<div class="hero-actions"><button class="btn primary" type="submit">Änderungen speichern</button><button class="btn danger" id="liveDeleteViolation" type="button">'+E(profileWords2().delete)+'</button></div><div id="liveVioEditStatus" class="live-status"></div></form></div>';
  document.body.appendChild(modal);
  const event=document.getElementById('liveVioEvent'),phase=document.getElementById('liveVioPhase');
  function sync(){
@@ -1358,7 +1348,7 @@ async function saveViolationEdit2(e,old){
  if(!special&&(!target||!(score>target*mult))){out.textContent='Der korrigierte Wert ist kein Verstoß mehr. Nutze „Verstoß löschen“. ';return}
  out.textContent=actionWord2('saving');
  try{
-  const editedPlayer=document.getElementById('liveVioPlayer').value.trim();await rpc('update_violation_fast',{p_id:old.id,p_player_name:editedPlayer,p_event_name:event,p_phase_name:phase,p_kind:special?'swordland':'overspend',p_score:special?null:score,p_target_value:target,p_occurred_at:utcInputIso2(document.getElementById('liveVioOccurred').value),p_expiry_days:Number(S.settings?.violation_expiry_days||30),p_note:document.getElementById('liveVioNote').value.trim()||null});
+  const editedPlayer=document.getElementById('liveVioPlayer').value.trim();await rpc('update_violation_fast',{p_id:old.id,p_player_name:editedPlayer,p_event_name:event,p_phase_name:phase,p_kind:special?'swordland':'overspend',p_score:special?null:score,p_target_value:target,p_occurred_at:new Date(document.getElementById('liveVioOccurred').value).toISOString(),p_expiry_days:28,p_note:document.getElementById('liveVioNote').value.trim()||null});
   document.getElementById('liveViolationEditModal')?.remove();await load();await openProfile2(editedPlayer||old.player_name);
  }catch(err){out.textContent=err.message||String(err)}
 }
@@ -1397,32 +1387,14 @@ async function askDeleteReason2(v){
  });
 }
 async function deleteViolation2(v){
- if(!v){alert('Der Verstoß konnte nicht geladen werden. Bitte die Seite neu laden.');return}
- let details;
- try{details=await askDeleteReason2(v)}catch(err){alert(err?.message||String(err));return}
- if(!details)return;
+ if(!canDeleteViolation2(v))return;
+ const details=await askDeleteReason2(v);if(!details)return;
  const out=document.getElementById('liveVioEditStatus');if(out)out.textContent=actionWord2('deleting');
  try{
-  const ok=await rpc('delete_violation_fast_attributed',{p_id:v.id,p_reason:details.reason,p_deleted_by_player_id:details.officerId});
-  if(ok!==true)throw Error('Der Verstoß wurde nicht gelöscht. Bitte die Seite neu laden und erneut versuchen.');
+  await rpc('delete_violation_fast_attributed',{p_id:v.id,p_reason:details.reason,p_deleted_by_player_id:details.officerId});
   document.getElementById('liveViolationEditModal')?.remove();
   await load();renderHomeFull2();renderPlayers2();await openProfile2(v.player_name);
- }catch(err){
-  const msg=err?.message||String(err);
-  if(out)out.textContent=msg;else alert(msg);
- }
-}
-if(!window.__NAP2_DELETE_DELEGATION){
- window.__NAP2_DELETE_DELEGATION=true;
- document.addEventListener('click',e=>{
-  const target=e.target instanceof Element?e.target.closest('#liveDeleteViolation'):null;
-  if(!target)return;
-  const id=String(target.getAttribute('data-id')||'');
-  const v=S.v.find(x=>String(x.id)===id);
-  e.preventDefault();
-  e.stopImmediatePropagation();
-  deleteViolation2(v);
- },true);
+ }catch(err){if(out)out.textContent=err.message||String(err)}
 }
 function profileStage2(name,l){
  const text={
@@ -1451,7 +1423,11 @@ function profileActionDone2(s){
 }
 function profileActionLabel2(s){
  const v=Number(s.level)===1?S.v.find(v=>String(v.id)===String(s.violation_id)):null;
- return v?.contacted?t('contact'):profileActionDone2(s)?'erledigt':'offen';
+ const w={
+  de:{done:'erledigt',open:'offen'},en:{done:'completed',open:'open'},
+  fr:{done:'terminé',open:'ouvert'},es:{done:'finalizado',open:'pendiente'}
+ }[L()]||{done:'erledigt',open:'offen'};
+ return v?.contacted?t('contact'):profileActionDone2(s)?w.done:w.open;
 }
 const EXTENDED_ACTION_WORDS2={
  de:{notice:'Nur nach NAP-Abstimmung starten. Ohne Endzeit bleibt die Extended Exclusion aktiv, bis sie manuell beendet wird.',end:'Optionales Ende',start:'Extended Exclusion starten',confirm:'Extended NAP Exclusion jetzt starten?',badEnd:'Das optionale Ende muss in der Zukunft liegen.',started:'Extended Exclusion gestartet',endNow:'Extended beenden',endConfirm:'Extended NAP Exclusion jetzt beenden?',ended:'Extended Exclusion beendet'},
@@ -1462,7 +1438,7 @@ const EXTENDED_ACTION_WORDS2={
 function extendedActionWords2(){return EXTENDED_ACTION_WORDS2[L()]||EXTENDED_ACTION_WORDS2.de}
 async function startExtendedExclusion2(id,input){
  const s=S.x.find(x=>String(x.id)===String(id));if(!s||Number(s.level)!==4||s.started_at)return;
- const w=extendedActionWords2(),raw=input?.value?.trim()||'',end=raw?utcInputDate2(raw):null;
+ const w=extendedActionWords2(),raw=input?.value?.trim()||'',end=raw?new Date(raw):null;
  if(end&&(Number.isNaN(end.getTime())||end<=new Date())){alert(w.badEnd);return}
  if(!confirm(w.confirm))return;
  try{
@@ -1471,159 +1447,51 @@ async function startExtendedExclusion2(id,input){
   if(document.getElementById('view-profile')?.classList.contains('active'))await openProfile2(s.player_name);
  }catch(err){alert(err.message||String(err))}
 }
-const PLAYER_MESSAGE_UI2={
- de:{open:'💬 Spielernachricht',title:'Nachricht an Spieler',copy:'Kopieren',copied:'✓ Kopiert',close:'Schließen',fallback:'Für die hinterlegte Sprache gibt es noch keine eigene Vorlage – Englisch wird verwendet.'},
- en:{open:'💬 Player message',title:'Message to player',copy:'Copy',copied:'✓ Copied',close:'Close',fallback:'No dedicated template exists for the saved language yet – English is used.'},
- fr:{open:'💬 Message au joueur',title:'Message au joueur',copy:'Copier',copied:'✓ Copié',close:'Fermer',fallback:'Il n’existe pas encore de modèle dédié pour la langue enregistrée – l’anglais est utilisé.'},
- es:{open:'💬 Mensaje al jugador',title:'Mensaje al jugador',copy:'Copiar',copied:'✓ Copiado',close:'Cerrar',fallback:'Aún no existe una plantilla propia para el idioma guardado – se usa inglés.'}
+const R1_WATCH_WORDS2={
+ de:{title:'R1 API-Watch · Testmodus',waiting:'Warte auf den nächsten 10-Minuten-Check.',rank:'Letzter API-Rang',once:'R1 einmal erkannt · zweite frische Bestätigung ausstehend.',confirmed:'R1 durch zwei frische Snapshots bestätigt.',left:'Nach bestätigtem R1 wurde wieder ein höherer Rang erkannt.',invalid:'Letzter API-Check war nicht verwertbar · keine automatische Änderung.',shadow:'Shadow-Modus: Die Sanktion wird durch diesen Test noch nicht verändert.',start:'Effektiver R1-Start',end:'Berechnetes 24h-Ende'},
+ en:{title:'R1 API Watch · test mode',waiting:'Waiting for the next 10-minute check.',rank:'Last API rank',once:'R1 detected once · waiting for a second fresh confirmation.',confirmed:'R1 confirmed by two fresh snapshots.',left:'A higher rank was detected after confirmed R1.',invalid:'The last API check was not usable · no automatic change.',shadow:'Shadow mode: this test does not change the sanction yet.',start:'Effective R1 start',end:'Calculated 24h end'},
+ fr:{title:'Surveillance API R1 · mode test',waiting:'En attente du prochain contrôle de 10 minutes.',rank:'Dernier rang API',once:'R1 détecté une fois · deuxième confirmation récente en attente.',confirmed:'R1 confirmé par deux instantanés récents.',left:'Un rang supérieur a été détecté après la confirmation R1.',invalid:'Le dernier contrôle API est inutilisable · aucune modification automatique.',shadow:'Mode shadow : ce test ne modifie pas encore la sanction.',start:'Début R1 effectif',end:'Fin calculée après 24 h'},
+ es:{title:'Vigilancia API R1 · modo prueba',waiting:'Esperando el próximo control de 10 minutos.',rank:'Último rango API',once:'R1 detectado una vez · esperando una segunda confirmación reciente.',confirmed:'R1 confirmado por dos snapshots recientes.',left:'Se detectó un rango superior después de confirmar R1.',invalid:'El último control de API no fue válido · sin cambios automáticos.',shadow:'Modo shadow: esta prueba todavía no cambia la sanción.',start:'Inicio R1 efectivo',end:'Fin calculado de 24 h'}
 };
-function playerMessageUi2(){return PLAYER_MESSAGE_UI2[L()]||PLAYER_MESSAGE_UI2.de}
-function messageLocale2(lang){return {de:'de-DE',en:'en-US',fr:'fr-FR',es:'es-ES'}[lang]||'en-US'}
-function messageNumber2(value,lang){return Number(value||0).toLocaleString(messageLocale2(lang))}
-function messageDate2(value,lang){
- if(!value)return '';
- const d=new Date(value);if(Number.isNaN(d.getTime()))return '';
- return d.toLocaleString(messageLocale2(lang),{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'UTC'})+' UTC';
+function r1WatchWords2(){return R1_WATCH_WORDS2[L()]||R1_WATCH_WORDS2.de}
+function r1WatchHtml2(s){
+ if(Number(s.level)!==2||s.completed)return '';
+ const w=r1WatchWords2();
+ return '<div class="live-note live-r1-watch" data-r1-watch="'+E(s.id)+'" style="margin-bottom:10px"><b>'+E(w.title)+'</b><div class="live-r1-watch-status">'+E(w.waiting)+'</div><small>'+E(w.shadow)+'</small></div>';
 }
-function messagePhaseLabel2(v,lang){
- const key=String(v?.phase_name||''),row=(PHASES2[v?.event_name]||[]).find(x=>x[0]===key),raw=row?.[1]||key;
- const m=key.match(/^(?:sg|b)(\d+)$/);
- if(m){
-  const n=m[1];
-  return ({de:'Tag ',en:'Day ',fr:'Jour ',es:'Día '}[lang]||'Day ')+n;
- }
- if(/^ac1$/i.test(key))return ({de:'Phase 1',en:'Phase 1',fr:'Phase 1',es:'Fase 1'}[lang]||'Phase 1');
- return raw;
+async function loadR1WatchStatus2(el){
+ if(!el?.isConnected)return;
+ const w=r1WatchWords2(),id=el.dataset.r1Watch,status=el.querySelector('.live-r1-watch-status');
+ try{
+  const d=await rpc('get_my_r1_watch_status',{p_sanction_id:id});
+  if(!status)return;
+  if(!d){status.textContent=w.waiting;return}
+  let text='';
+  if(d.last_valid===false)text=w.invalid;
+  else if(d.confirmed_at&&d.left_r1_at)text=w.left;
+  else if(d.confirmed_at)text=w.confirmed;
+  else if(Number(d.last_rank)===1&&d.first_r1_observed_at)text=w.once;
+  else if(d.last_label)text=w.rank+': '+d.last_label;
+  else text=w.waiting;
+  if(d.effective_start_at)text+=' · '+w.start+': '+exactDateTime2(d.effective_start_at);
+  if(d.projected_end_at)text+=' · '+w.end+': '+exactDateTime2(d.projected_end_at);
+  if(d.last_observed_at)text+=' · Check: '+exactDateTime2(d.last_observed_at);
+  status.textContent=text;
+ }catch(err){if(status)status.textContent=w.invalid}
 }
-function messageEventLabel2(v,lang){
- const event=String(v?.event_name||'Event'),phase=messagePhaseLabel2(v,lang);
- return phase?event+' – '+phase:event;
-}
-function playerMessageStageText2(level,s,lang){
- const end=s?.end_at?messageDate2(s.end_at,lang):'';
- const started=!!s?.started_at;
- const texts={
-  de:{
-   1:'Dies ist aktuell Stufe 1 und damit eine Verwarnung gemäß Law 14.',
-   2:'Da dies aktuell Stufe 2 ist, folgt gemäß Law 14 R1. Während der Maßnahme bist du außerdem von Ministerposten ausgeschlossen.'+(end?' Die Maßnahme läuft bis '+end+'.':''),
-   3:'Da dies aktuell Stufe 3 ist, folgt gemäß Law 14 eine 24h NAP-Exclusion.'+(end?' Sie läuft bis '+end+'.':''),
-   4:started?('Da dies aktuell Stufe 4 ist, ist eine verlängerte NAP-Exclusion aktiv.'+(end?' Sie läuft bis '+end+'.':'')):'Da dies aktuell Stufe 4 ist, wird eine längere NAP-Exclusion gemäß Law 14 durch eine NAP-Abstimmung festgelegt.'
-  },
-  en:{
-   1:'This is currently Level 1 and therefore a warning under Law 14.',
-   2:'As this is currently Level 2, R1 applies under Law 14. During the measure, you are also excluded from minister positions.'+(end?' The measure runs until '+end+'.':''),
-   3:'As this is currently Level 3, a 24-hour NAP Exclusion applies under Law 14.'+(end?' It runs until '+end+'.':''),
-   4:started?('As this is currently Level 4, an extended NAP Exclusion is active.'+(end?' It runs until '+end+'.':'')):'As this is currently Level 4, a longer NAP Exclusion will be determined by a NAP vote under Law 14.'
-  },
-  fr:{
-   1:'Il s’agit actuellement du niveau 1, donc d’un avertissement conformément à la Law 14.',
-   2:'Comme il s’agit actuellement du niveau 2, le rang R1 s’applique conformément à la Law 14. Pendant cette mesure, tu es également exclu des postes de ministre.'+(end?' La mesure est active jusqu’au '+end+'.':''),
-   3:'Comme il s’agit actuellement du niveau 3, une exclusion NAP de 24 h s’applique conformément à la Law 14.'+(end?' Elle est active jusqu’au '+end+'.':''),
-   4:started?('Comme il s’agit actuellement du niveau 4, une exclusion NAP prolongée est active.'+(end?' Elle est active jusqu’au '+end+'.':'')):'Comme il s’agit actuellement du niveau 4, une exclusion NAP plus longue sera déterminée par un vote NAP conformément à la Law 14.'
-  },
-  es:{
-   1:'Actualmente es nivel 1 y, por tanto, una advertencia según la Law 14.',
-   2:'Como actualmente es nivel 2, se aplica R1 según la Law 14. Durante la medida también quedas excluido de los puestos de ministro.'+(end?' La medida estará activa hasta el '+end+'.':''),
-   3:'Como actualmente es nivel 3, se aplica una exclusión NAP de 24 h según la Law 14.'+(end?' Estará activa hasta el '+end+'.':''),
-   4:started?('Como actualmente es nivel 4, hay una exclusión NAP ampliada activa.'+(end?' Estará activa hasta el '+end+'.':'')):'Como actualmente es nivel 4, una exclusión NAP más larga se determinará mediante una votación NAP según la Law 14.'
-  }
- };
- return (texts[lang]||texts.en)[Number(level)||1]||'';
-}
-function buildPlayerMessage2(s,v,P,lang){
- lang=['de','en','fr','es'].includes(lang)?lang:'en';
- const name=P?.name||P?.player_name||v?.player_name||'';
- const target=Number(v?.target_value||0),score=Number(v?.score||0);
- const mult=violationLimit2(v)?.multiplier||3,limit=target*mult,event=messageEventLabel2(v,lang);
- const stage=playerMessageStageText2(Number(s?.level||1),s,lang);
- const parts={
-  de:[
-   'Hi '+name+' 👋',
-   'kurze Info zu deinem aktuellen Law-14-Verstoß:',
-   'Beim '+event+' hast du '+messageNumber2(score,lang)+' Punkte erreicht. Das Tagesziel liegt bei '+messageNumber2(target,lang)+', die erlaubte '+mult+'×-Grenze somit bei '+messageNumber2(limit,lang)+' Punkten. Damit wurde die Grenze überschritten.',
-   stage,
-   'Bitte achte bei den kommenden Events wieder auf die jeweilige Grenze. Danke dir! 🙏'
-  ],
-  en:[
-   'Hi '+name+' 👋',
-   'a quick note about your current Law 14 violation:',
-   'In '+event+' you reached '+messageNumber2(score,lang)+' points. The target is '+messageNumber2(target,lang)+', so the allowed '+mult+'× limit is '+messageNumber2(limit,lang)+' points. This means the limit was exceeded.',
-   stage,
-   'Please keep an eye on the applicable limit in upcoming events. Thank you! 🙏'
-  ],
-  fr:[
-   'Salut '+name+' 👋',
-   'petite information concernant ton infraction actuelle à la Law 14 :',
-   'Lors de '+event+', tu as atteint '+messageNumber2(score,lang)+' points. L’objectif est de '+messageNumber2(target,lang)+', donc la limite autorisée de '+mult+'× est de '+messageNumber2(limit,lang)+' points. La limite a donc été dépassée.',
-   stage,
-   'Merci de faire attention à la limite applicable lors des prochains événements. 🙏'
-  ],
-  es:[
-   'Hola '+name+' 👋',
-   'un breve aviso sobre tu infracción actual de la Law 14:',
-   'En '+event+' alcanzaste '+messageNumber2(score,lang)+' puntos. El objetivo es de '+messageNumber2(target,lang)+', por lo que el límite permitido de '+mult+'× es de '+messageNumber2(limit,lang)+' puntos. Por tanto, se superó el límite.',
-   stage,
-   'Por favor, ten en cuenta el límite correspondiente en los próximos eventos. ¡Gracias! 🙏'
-  ]
- };
- return (parts[lang]||parts.en).filter(Boolean).join('\n\n');
-}
-async function copyPlayerMessageText2(text){
- try{await navigator.clipboard.writeText(text);return true}catch{}
- const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
- let ok=false;try{ok=document.execCommand('copy')}catch{}ta.remove();return ok;
-}
-function openPlayerMessage2(sanctionId){
- const s=S.x.find(x=>String(x.id)===String(sanctionId));if(!s)return;
- const v=S.v.find(x=>String(x.id)===String(s.violation_id));if(!v)return;
- const P=p(s.player_name),ui=playerMessageUi2(),saved=(P.languages||[]).map(x=>String(x).toLowerCase());
- const supported=saved.filter(x=>['de','en','fr','es'].includes(x));
- const langs=[...new Set(supported.length?supported:['en'])],fallback=saved.length>0&&!supported.length;
- let current=langs[0];
- document.getElementById('livePlayerMessageModal')?.remove();
- const modal=document.createElement('div');modal.id='livePlayerMessageModal';modal.className='modal-backdrop';
- modal.innerHTML='<div class="modal-card player-message-modal"><div class="modal-head"><div><b>'+E(ui.title)+'</b><small>'+E(s.player_name)+' · Stufe '+E(s.level)+'</small></div><button class="icon-btn player-message-close" type="button">×</button></div>'+
-  '<div class="live-form">'+(langs.length>1?'<div class="player-message-langs">'+langs.map((x,i)=>'<button class="btn small '+(i===0?'primary':'secondary')+' player-message-lang" data-lang="'+E(x)+'" type="button">'+E(languageName2(x))+'</button>').join('')+'</div>':'')+
-  (fallback?'<div class="notice warn">'+E(ui.fallback)+'</div>':'')+
-  '<textarea class="player-message-preview" readonly></textarea>'+
-  '<div class="hero-actions"><button class="btn secondary player-message-close" type="button">'+E(ui.close)+'</button><button class="btn primary player-message-copy" type="button">📋 '+E(ui.copy)+'</button></div><div class="live-status player-message-status"></div></div></div>';
- document.body.appendChild(modal);
- const preview=modal.querySelector('.player-message-preview'),copy=modal.querySelector('.player-message-copy'),status=modal.querySelector('.player-message-status');
- const paint=()=>{preview.value=buildPlayerMessage2(s,v,P,current);modal.querySelectorAll('.player-message-lang').forEach(b=>{b.classList.toggle('primary',b.dataset.lang===current);b.classList.toggle('secondary',b.dataset.lang!==current)})};
- modal.querySelectorAll('.player-message-lang').forEach(b=>b.onclick=()=>{current=b.dataset.lang;paint()});
- modal.querySelectorAll('.player-message-close').forEach(b=>b.onclick=()=>modal.remove());
- modal.onclick=e=>{if(e.target===modal)modal.remove()};
- copy.onclick=async()=>{const ok=await copyPlayerMessageText2(preview.value);status.textContent=ok?ui.copied:'Copy failed';if(ok){copy.textContent='✓ '+ui.copied.replace(/^✓\s*/,'');setTimeout(()=>{if(copy.isConnected)copy.textContent='📋 '+ui.copy},1400)}};
- paint();
-}
-
 function profileActionCard2(s){
-  const v=S.v.find(v=>String(v.id)===String(s.violation_id))||null;
-  const status=sanctionStatus2(s,v),start=Number(s.level)===1?v?.contacted_at||s.started_at:s.started_at,lvl=Number(s.level)||0;
-  const r1Missing=status.key==='timer_missing'&&lvl===2,l4Open=lvl===4&&!s.started_at,w4=extendedActionWords2();
-  const aw={
-   de:{level:'Stufe',created:'Erstellt',start:'Start',end:'Ende',remaining:'Restzeit',status:'Status',contact:'Kontakt',r1Notice:'R1 bestätigt – individuelle Endzeit noch setzen.',setTimer:'Timer setzen'},
-   en:{level:'Level',created:'Created',start:'Start',end:'End',remaining:'Time remaining',status:'Status',contact:'Contact',r1Notice:'R1 confirmed – set the individual end time.',setTimer:'Set timer'},
-   fr:{level:'Niveau',created:'Créé',start:'Début',end:'Fin',remaining:'Temps restant',status:'Statut',contact:'Contact',r1Notice:'R1 confirmé – définissez l’heure de fin individuelle.',setTimer:'Définir le minuteur'},
-   es:{level:'Nivel',created:'Creado',start:'Inicio',end:'Fin',remaining:'Tiempo restante',status:'Estado',contact:'Contacto',r1Notice:'R1 confirmado – establece la hora de fin individual.',setTimer:'Configurar temporizador'}
-  }[L()]||{level:'Stufe',created:'Erstellt',start:'Start',end:'Ende',remaining:'Restzeit',status:'Status',contact:'Kontakt',r1Notice:'R1 bestätigt – individuelle Endzeit noch setzen.',setTimer:'Timer setzen'};
-  const stageName=lvl===2?'R1':lvl===3?'24h NAP OUT':lvl===4?'Extended':aw.contact;
-  const remaining=status.key==='active'&&s.end_at?timerRemaining2(s.end_at):status.key==='expired'?(SANCTION_STATUS_WORDS2[L()]||SANCTION_STATUS_WORDS2.de).expired:'–';
-  const pending=lvl===1&&v&&!profileActionDone2(s)?'<button class="btn primary profile-sanction-act" data-k="contact" data-id="'+E(v.id)+'" data-player="'+E(s.player_name)+'">'+E(t('contact'))+'</button>':
-    lvl===2&&!s.completed?'<button class="btn primary profile-sanction-act" data-k="r1" data-id="'+E(s.id)+'" data-player="'+E(s.player_name)+'">'+E(t('r1'))+'</button>':
-    lvl===3&&!s.completed?'<button class="btn primary profile-sanction-act" data-k="nap" data-id="'+E(s.id)+'" data-player="'+E(s.player_name)+'">'+E(t('nap'))+'</button>':'';
-  return '<article class="card" data-profile-sanction="'+E(s.id)+'"><div class="card-head"><div><div class="card-title">'+E(aw.level)+' '+E(s.level)+' · '+E(stageName)+'</div><div class="card-sub">'+E(aw.created)+' '+E(D(s.created_at))+'</div></div><span class="pill '+E(status.cls)+'">'+E(status.label)+'</span></div><div class="card-body">'+
-   (pending?'<div class="hero-actions" style="margin-bottom:10px">'+pending+'</div>':'')+
-   (r1Missing?'<div class="notice warn" style="margin-bottom:10px">⚠ '+E(aw.r1Notice)+'</div><div class="live-form-row"><label>'+E(aw.end)+' (UTC)<input class="profile-r1-end" type="datetime-local" value="'+E(toLocalInput2(s.end_at))+'"></label><div style="display:flex;align-items:end"><button class="btn secondary profile-r1-save" data-id="'+E(s.id)+'">'+E(aw.setTimer)+'</button></div></div>':'')+
-   (l4Open?'<div class="notice warn" style="margin-bottom:10px">⚠ '+E(w4.notice)+'</div><div class="live-form-row"><label>'+E(w4.end)+' (UTC)<input class="profile-l4-end" type="datetime-local"></label><div style="display:flex;align-items:end"><button class="btn primary profile-l4-start" data-id="'+E(s.id)+'">'+E(w4.start)+'</button></div></div>':'')+
-   '<div class="action-date-grid"><div><span>'+E(aw.start)+'</span><b>'+E(D(start))+'</b></div><div><span>'+E(aw.end)+'</span><b>'+E(D(s.end_at))+'</b></div><div><span>'+E(aw.remaining)+'</span><b'+(status.key==='active'&&s.end_at?' data-timer-end="'+E(s.end_at)+'"':'')+'>'+E(remaining)+'</b></div><div><span>'+E(aw.status)+'</span><b>'+E(status.label)+'</b></div></div><div class="hero-actions player-message-action"><button class="btn secondary profile-player-message" data-id="'+E(s.id)+'" type="button">'+E(playerMessageUi2().open)+'</button></div></div></article>';
+ const v=S.v.find(v=>String(v.id)===String(s.violation_id))||null;
+ const status=sanctionStatus2(s,v),start=Number(s.level)===1?v?.contacted_at||s.started_at:s.started_at;
+ const r1Missing=status.key==='timer_missing'&&Number(s.level)===2,
+  l4Open=Number(s.level)===4&&!s.started_at,w4=extendedActionWords2();
+ const remaining=status.key==='active'&&s.end_at?dur(new Date(s.end_at)-Date.now()):
+   status.key==='expired'?(SANCTION_STATUS_WORDS2[L()]||SANCTION_STATUS_WORDS2.de).expired:'–';
+ return '<article class="card" data-profile-sanction="'+E(s.id)+'"><div class="card-head"><div><div class="card-title">Stufe '+E(s.level)+' · '+E(Number(s.level)===2?'R1':Number(s.level)===3?'24h NAP OUT':Number(s.level)===4?'Extended':'Kontakt')+'</div><div class="card-sub">Erstellt '+E(D(s.created_at))+'</div></div><span class="pill '+E(status.cls)+'">'+E(status.label)+'</span></div><div class="card-body">'+r1WatchHtml2(s)+(r1Missing?'<div class="notice warn" style="margin-bottom:10px">⚠ R1 bestätigt – individuelle Endzeit noch setzen.</div><div class="live-form-row"><label>Ende<input class="profile-r1-end" type="datetime-local" value="'+E(toLocalInput2(s.end_at))+'"></label><div style="display:flex;align-items:end"><button class="btn secondary profile-r1-save" data-id="'+E(s.id)+'">Timer setzen</button></div></div>':'')+(l4Open?'<div class="notice warn" style="margin-bottom:10px">⚠ '+E(w4.notice)+'</div><div class="live-form-row"><label>'+E(w4.end)+'<input class="profile-l4-end" type="datetime-local"></label><div style="display:flex;align-items:end"><button class="btn primary profile-l4-start" data-id="'+E(s.id)+'">'+E(w4.start)+'</button></div></div>':'')+'<div class="action-date-grid"><div><span>Start</span><b>'+E(D(start))+'</b></div><div><span>Ende</span><b>'+E(D(s.end_at))+'</b></div><div><span>Restzeit</span><b>'+E(remaining)+'</b></div><div><span>Status</span><b>'+E(status.label)+'</b></div></div></div></article>';
 }
 function bindProfileR1Timers2(){
-  document.querySelectorAll('.profile-r1-save').forEach(b=>b.onclick=()=>setR1Timer2(b.dataset.id,b.closest('[data-profile-sanction]')?.querySelector('.profile-r1-end')));
-  document.querySelectorAll('.profile-l4-start').forEach(b=>b.onclick=()=>startExtendedExclusion2(b.dataset.id,b.closest('[data-profile-sanction]')?.querySelector('.profile-l4-end')));
-  document.querySelectorAll('.profile-sanction-act').forEach(b=>b.onclick=async()=>{await doAct(b.dataset.k,b.dataset.id);if(b.dataset.player)await openProfile2(b.dataset.player)});
-  document.querySelectorAll('.profile-player-message').forEach(b=>b.onclick=()=>openPlayerMessage2(b.dataset.id));
-  refreshSanctionTimerLabels2();
+ document.querySelectorAll('.profile-r1-save').forEach(b=>b.onclick=()=>setR1Timer2(b.dataset.id,b.closest('[data-profile-sanction]')?.querySelector('.profile-r1-end')));
+ document.querySelectorAll('.profile-l4-start').forEach(b=>b.onclick=()=>startExtendedExclusion2(b.dataset.id,b.closest('[data-profile-sanction]')?.querySelector('.profile-l4-end')));
+ document.querySelectorAll('[data-r1-watch]').forEach(el=>loadR1WatchStatus2(el));
 }
 
 const SHARED_SPENDING_WORDS2={
@@ -1655,7 +1523,7 @@ function sharedSpendingPanel2(violations){
  if(!days.length)return '';
  return '<details class="card live-shared-spending"><summary style="cursor:pointer;padding:14px 17px;list-style:revert"><b>'+E(w.title)+'</b><div class="card-sub">'+E(w.sub)+'</div></summary><div class="card-body live-list">'+
  days.map(([day,entries])=>{
-   const date=new Date(day+'T00:00:00Z').toLocaleDateString(loc(),{timeZone:'UTC'});
+   const date=new Date(day+'T00:00:00Z').toLocaleDateString(loc());
    const allIds=new Set(entries.map(v=>String(v.id)));
    const existing=(S.shared||[]).filter(x=>
      x.player_id===entries[0].player_id && String(x.violation_day)===day &&
@@ -1696,23 +1564,19 @@ async function saveSharedSpending2(form,name){
    document.querySelector('[data-live-profiletab="violations"]')?.click();
  }catch(err){out.textContent=err.message||String(err);btn.disabled=false}
 }
-function sanctionForViolation2(v){
- return S.x.filter(s=>String(s.violation_id||'')===String(v?.id||''))
-  .sort((a,b)=>Number(b.level||0)-Number(a.level||0)||new Date(b.created_at||0)-new Date(a.created_at||0))[0]||null;
-}
 function profileWords2(){
  const d={
- de:{back:'← Spielerakten',head:'SPIELERPROFIL',overview:'Übersicht',violations:'Fälle',actions:'Maßnahmen',performance:'Performance',comments:'Kommentare',history:'Historie',points:'Punkte',limit:'Grenze',contact:'Kontakt',open:'offen',fix:'✎ Korrigieren',delete:'Löschen',attend:'Intern · keine Law 14',internalNote:'Interner Allianzfall. Dieser Eintrag erzeugt keine Law-14-Stufe oder NAP-Sanktion.',shot:'Screenshots zum Verstoß',noShot:'Kein Screenshot zu diesem Verstoß gespeichert.',failedShot:'Screenshot konnte nicht geladen werden.',note:'Kommentar / Notiz zum Verstoß',file:'Weitere Aktenkommentare zum Spieler',notLinked:'Diese Aktenkommentare sind nicht einem einzelnen Verstoß zugeordnet.',noFile:'Keine weiteren Aktenkommentare.',frame:'Videoposition',none:'Keine Verstöße.',import:'Aus einem früheren NAP-weiten ScreenRecording-Import übernommen.'},
- en:{back:'← Player files',head:'PLAYER PROFILE',overview:'Overview',violations:'Cases',actions:'Actions',performance:'Performance',comments:'Comments',history:'History',points:'Points',limit:'Limit',contact:'Contact',open:'open',fix:'✎ Correct',delete:'Delete',attend:'Internal · not Law 14',internalNote:'Internal alliance case. This entry does not create a Law 14 level or NAP sanction.',shot:'Violation screenshots',noShot:'No screenshot stored for this violation.',failedShot:'Could not load screenshot.',note:'Violation comment / note',file:'Other player-file comments',notLinked:'These comments are not linked to an individual violation.',noFile:'No other player-file comments.',frame:'Video position',none:'No violations.',import:'Imported from an earlier NAP-wide ScreenRecording import.'},
- fr:{back:'← Dossiers joueurs',head:'PROFIL DU JOUEUR',overview:'Aperçu',violations:'Cas',actions:'Mesures',performance:'Performance',comments:'Commentaires',history:'Historique',points:'Points',limit:'Limite',contact:'Contact',open:'ouvert',fix:'✎ Corriger',delete:'Supprimer',attend:'Interne · pas loi 14',internalNote:'Cas interne à l’alliance. Cette entrée ne crée aucun niveau loi 14 ni sanction NAP.',shot:'Captures de l’infraction',noShot:'Aucune capture enregistrée pour cette infraction.',failedShot:'Impossible de charger la capture.',note:'Commentaire / note sur l’infraction',file:'Autres commentaires du dossier',notLinked:'Ces commentaires ne sont pas liés à une infraction précise.',noFile:'Aucun autre commentaire.',frame:'Position dans la vidéo',none:'Aucune infraction.',import:'Importé d’un ancien import ScreenRecording NAP.'},
- es:{back:'← Expedientes',head:'PERFIL DEL JUGADOR',overview:'Resumen',violations:'Casos',actions:'Medidas',performance:'Rendimiento',comments:'Comentarios',history:'Historial',points:'Puntos',limit:'Límite',contact:'Contacto',open:'pendiente',fix:'✎ Corregir',delete:'Eliminar',attend:'Interno · no Law 14',internalNote:'Caso interno de la alianza. Esta entrada no crea un nivel Law 14 ni una sanción NAP.',shot:'Capturas de la infracción',noShot:'No hay captura guardada para esta infracción.',failedShot:'No se pudo cargar la captura.',note:'Comentario / nota de la infracción',file:'Otros comentarios del expediente',notLinked:'Estos comentarios no están asociados a una infracción concreta.',noFile:'Sin otros comentarios.',frame:'Posición en el vídeo',none:'Sin infracciones.',import:'Importado de una prueba anterior de ScreenRecording NAP.'}
+ de:{back:'← Spielerakten',head:'SPIELERPROFIL',overview:'Übersicht',violations:'Fälle',actions:'Maßnahmen',performance:'Performance',comments:'Kommentare',history:'Historie',points:'Punkte',limit:'Grenze',contact:'Kontakt',open:'offen',fix:'✎ Korrigieren',delete:'🗑 Löschen',historyViolation:'Verstoß',historyAction:'Maßnahme',historyStage:'Stufe',historyNone:'Keine Historie.',attend:'Intern · keine Law 14',internalNote:'Interner Allianzfall. Dieser Eintrag erzeugt keine Law-14-Stufe oder NAP-Sanktion.',shot:'Screenshots zum Verstoß',noShot:'Kein Screenshot zu diesem Verstoß gespeichert.',failedShot:'Screenshot konnte nicht geladen werden.',note:'Kommentar / Notiz zum Verstoß',file:'Weitere Aktenkommentare zum Spieler',notLinked:'Diese Aktenkommentare sind nicht einem einzelnen Verstoß zugeordnet.',noFile:'Keine weiteren Aktenkommentare.',frame:'Videoposition',none:'Keine Verstöße.',import:'Aus einem früheren NAP-weiten ScreenRecording-Import übernommen.'},
+ en:{back:'← Player files',head:'PLAYER PROFILE',overview:'Overview',violations:'Cases',actions:'Actions',performance:'Performance',comments:'Comments',history:'History',points:'Points',limit:'Limit',contact:'Contact',open:'open',fix:'✎ Correct',delete:'🗑 Delete',historyViolation:'Violation',historyAction:'Action',historyStage:'Stage',historyNone:'No history yet.',attend:'Internal · not Law 14',internalNote:'Internal alliance case. This entry does not create a Law 14 level or NAP sanction.',shot:'Violation screenshots',noShot:'No screenshot stored for this violation.',failedShot:'Could not load screenshot.',note:'Violation comment / note',file:'Other player-file comments',notLinked:'These comments are not linked to an individual violation.',noFile:'No other player-file comments.',frame:'Video position',none:'No violations.',import:'Imported from an earlier NAP-wide ScreenRecording import.'},
+ fr:{back:'← Dossiers joueurs',head:'PROFIL DU JOUEUR',overview:'Aperçu',violations:'Cas',actions:'Mesures',performance:'Performance',comments:'Commentaires',history:'Historique',points:'Points',limit:'Limite',contact:'Contact',open:'ouvert',fix:'✎ Corriger',delete:'🗑 Supprimer',historyViolation:'Infraction',historyAction:'Mesure',historyStage:'Niveau',historyNone:'Aucun historique.',attend:'Interne · pas loi 14',internalNote:'Cas interne à l’alliance. Cette entrée ne crée aucun niveau loi 14 ni sanction NAP.',shot:'Captures de l’infraction',noShot:'Aucune capture enregistrée pour cette infraction.',failedShot:'Impossible de charger la capture.',note:'Commentaire / note sur l’infraction',file:'Autres commentaires du dossier',notLinked:'Ces commentaires ne sont pas liés à une infraction précise.',noFile:'Aucun autre commentaire.',frame:'Position dans la vidéo',none:'Aucune infraction.',import:'Importé d’un ancien import ScreenRecording NAP.'},
+ es:{back:'← Expedientes',head:'PERFIL DEL JUGADOR',overview:'Resumen',violations:'Casos',actions:'Medidas',performance:'Rendimiento',comments:'Comentarios',history:'Historial',points:'Puntos',limit:'Límite',contact:'Contacto',open:'pendiente',fix:'✎ Corregir',delete:'🗑 Eliminar',historyViolation:'Infracción',historyAction:'Medida',historyStage:'Nivel',historyNone:'Sin historial.',attend:'Interno · no Law 14',internalNote:'Caso interno de la alianza. Esta entrada no crea un nivel Law 14 ni una sanción NAP.',shot:'Capturas de la infracción',noShot:'No hay captura guardada para esta infracción.',failedShot:'No se pudo cargar la captura.',note:'Comentario / nota de la infracción',file:'Otros comentarios del expediente',notLinked:'Estos comentarios no están asociados a una infracción concreta.',noFile:'Sin otros comentarios.',frame:'Posición en el vídeo',none:'Sin infracciones.',import:'Importado de una prueba anterior de ScreenRecording NAP.'}
  };return d[L()]||d.de;
 }
 async function openProfile2(name){
  const P=p(name),V=vv(name),X=ss(name),l=level(name),view=document.getElementById('view-profile');if(!view)return;
  const w=profileWords2();
  view.innerHTML='<button class="btn small" data-go="players">'+E(w.back)+'</button>'+
- '<div class="profile-head" style="margin-top:12px"><div class="profile-main">'+avatarHtml(P,'profile-avatar')+'<div><div class="kicker">'+E(w.head)+'</div><div class="profile-name">'+E(name)+'</div><div class="muted small">Player ID '+E(P.game_id||'–')+' · <span class="pill">'+E(S.a)+'</span> · '+E((P.languages||[]).map(languageName2).join(' / ')||'–')+'</div></div></div></div>'+
+ '<div class="profile-head" style="margin-top:12px"><div class="profile-main">'+avatarHtml(P,'profile-avatar')+'<div><div class="kicker">'+E(w.head)+'</div><div class="profile-name">'+E(name)+'</div><div class="muted small">Player ID '+E(P.game_id||'–')+' · <span class="pill">'+E(P.alliance_code==null?unaffiliatedWord2('alliance'):(P.alliance_code||S.a))+'</span>'+(P.alliance_rank_label?' · <span class="pill blue">'+E(P.alliance_rank_label)+'</span>':'')+' · '+E((P.languages||[]).map(languageName2).join(' / ')||'–')+'</div></div></div></div>'+
  profileStage2(name,l)+
  '<div class="profile-tabs"><button class="profile-tab active" data-live-profiletab="overview">'+E(w.overview)+'</button><button class="profile-tab" data-live-profiletab="violations">'+E(w.violations)+'</button><button class="profile-tab" data-live-profiletab="actions">'+E(w.actions)+'</button><button class="profile-tab" data-live-profiletab="performance">'+E(w.performance)+'</button><button class="profile-tab" data-live-profiletab="comments">'+E(w.comments)+'</button><button class="profile-tab" data-live-profiletab="history">'+E(w.history)+'</button></div><div id="liveProfileBody"></div>';
  setViewBase2('profile');view.querySelectorAll('[data-live-profiletab]').forEach(b=>b.onclick=()=>{view.querySelectorAll('[data-live-profiletab]').forEach(x=>x.classList.toggle('active',x===b));paintProfileTab2(name,b.dataset.liveProfiletab)});await paintProfileTab2(name,'overview');
@@ -1722,14 +1586,13 @@ async function paintProfileTab2(name,tab){
  if(tab==='overview'){
   const lawCases=V.filter(isLaw14Case2),internalCases=V.filter(isInternalCase2),cw=playerCaseWords2();
   body.innerHTML='<div class="live-panel-grid"><section class="card"><div class="card-head"><div><div class="card-title">Übersicht</div></div></div><div class="card-body"><div class="live-stat-grid"><div class="live-stat"><b>'+lawCases.length+'</b><small>'+E(cw.lawCases)+'</small></div><div class="live-stat"><b>'+lawCases.filter(active).length+'</b><small>'+E(cw.lawActive)+'</small></div><div class="live-stat"><b>'+internalCases.length+'</b><small>'+E(cw.internalCases)+'</small></div><div class="live-stat"><b>'+l+'</b><small>'+E(cw.stage)+'</small></div><div class="live-stat"><b>'+E((P.languages||[]).map(languageName2).join(' / ')||'–')+'</b><small>Sprachen</small></div></div>'+languageEditor2(P)+'<form id="livePlayerIdForm" class="live-form"><label>Player ID<input id="livePlayerId" value="'+E(P.game_id||'')+'" inputmode="numeric"></label><button class="btn secondary">Player ID speichern</button><div id="livePlayerIdStatus" class="live-status"></div></form></div></section><section>'+ (latest?profileActionCard2(latest):'<div class="live-empty-state">Keine Maßnahme vorhanden.</div>') +'</section></div>';
-  bindProfileR1Timers2();document.getElementById('livePlayerIdForm').onsubmit=async e=>{e.preventDefault();const out=document.getElementById('livePlayerIdStatus');try{const d=await rpc('set_player_game_id',{p_player_name:name,p_game_id:document.getElementById('livePlayerId').value.replace(/\D/g,'')});if(d){const i=S.p.findIndex(x=>x.id===P.id);if(i>=0)S.p[i]=d}out.textContent=actionWord2('saved');await loadAvatars();renderPlayers2()}catch(err){out.textContent=err.message||String(err)}};return;
+  document.getElementById('liveSaveLanguages')?.addEventListener('click',()=>saveLanguages2(P));bindProfileR1Timers2();document.getElementById('livePlayerIdForm').onsubmit=async e=>{e.preventDefault();const out=document.getElementById('livePlayerIdStatus');try{const d=await rpc('set_player_game_id',{p_player_name:name,p_game_id:document.getElementById('livePlayerId').value.replace(/\D/g,'')});if(d){const i=S.p.findIndex(x=>x.id===P.id);if(i>=0)S.p[i]=d}out.textContent=actionWord2('saved');await loadAvatars();renderPlayers2()}catch(err){out.textContent=err.message||String(err)}};return;
  }
  if(tab==='violations'){
   const w=profileWords2();
-  body.innerHTML=sharedSpendingPanel2(V)+'<div class="live-list">'+(V.length?V.map(v=>'<article class="card live-violation-card" data-live-vio="'+E(v.id)+'"><div class="card-head live-violation-card-head"><div><div class="card-title">'+E(v.event_name||'–')+' · '+E(v.phase_name||'')+'</div><div class="card-sub">'+E(D(v.occurred_at))+(v.source_type?' · '+E(v.source_type):'')+'</div></div><div class="live-violation-badges">'+(v.shared_spending_group_id?'<span class="pill green">'+E(sharedWords2().badge)+'</span>':'')+'<span class="pill '+(isInternalCase2(v)?'blue':'red')+'">'+(isLaw14Case2(v)&&v.target_value?(Number(v.score)/Number(v.target_value)).toFixed(2)+'×':E(w.attend))+'</span></div></div><div class="live-violation-card-actions"><button class="btn small secondary live-edit-violation" data-id="'+E(v.id)+'">'+E(w.fix)+'</button><button class="btn small danger live-delete-violation" data-id="'+E(v.id)+'">'+E(w.delete)+'</button>'+(sanctionForViolation2(v)?'<button class="btn small secondary live-violation-message" data-id="'+E(sanctionForViolation2(v).id)+'" type="button">'+E(playerMessageUi2().open)+'</button>':'')+'</div><div class="card-body">'+(isInternalCase2(v)?'<div class="live-note"><b>'+E(w.attend)+'</b><p>'+E(w.internalNote)+'</p></div>':'<div class="action-date-grid"><div><span>'+E(w.points)+'</span><b>'+N(v.score)+'</b></div><div><span>'+E(w.limit)+'</span><b>'+(violationLimit2(v)?N(violationLimit2(v).points)+' ('+violationLimit2(v).multiplier+'×)':'–')+'</b></div><div><span>'+E(w.contact)+'</span><b>'+(v.contacted?'✓':E(w.open))+'</b></div></div>')+(v.note?'<div class="live-note live-violation-comment"><b>'+E(w.note)+'</b><p>'+E(v.note==='Imported from NAP-wide ScreenRecording test for selected event occurrence'?w.import:v.note)+'</p></div>':'')+'<div class="live-violation-proof"><b>'+E(w.shot)+'</b><div class="live-evidence" data-vio="'+E(v.id)+'"><div class="live-empty-state">'+E(w.noShot)+'</div></div></div></div></article>').join(''):'<div class="live-empty-state">'+E(w.none)+'</div>')+'</div><section class="card live-player-comments"><div class="card-head"><div><div class="card-title">'+E(w.file)+'</div><div class="card-sub">'+E(w.notLinked)+'</div></div></div><div class="card-body live-list" id="liveViolationPlayerComments"><div class="live-empty-state">'+E(w.noFile)+'</div></div></section>';
+  body.innerHTML=sharedSpendingPanel2(V)+'<div class="live-list">'+(V.length?V.map(v=>'<article class="card" data-live-vio="'+E(v.id)+'"><div class="card-head"><div><div class="card-title">'+E(v.event_name||'–')+' · '+E(v.phase_name||'')+'</div><div class="card-sub">'+E(D(v.occurred_at))+(v.source_type?' · '+E(v.source_type):'')+'</div></div><div class="hero-actions">'+(v.shared_spending_group_id?'<span class="pill green">'+E(sharedWords2().badge)+'</span>':'')+'<span class="pill '+(isInternalCase2(v)?'blue':'red')+'">'+(isLaw14Case2(v)&&v.target_value?(Number(v.score)/Number(v.target_value)).toFixed(2)+'×':E(w.attend))+'</span><button class="btn small secondary live-edit-violation" data-id="'+E(v.id)+'">'+E(w.fix)+'</button>'+(canDeleteViolation2(v)?'<button class="btn small danger live-delete-violation" data-id="'+E(v.id)+'">'+E(w.delete)+'</button>':'')+'</div></div><div class="card-body">'+(isInternalCase2(v)?'<div class="live-note"><b>'+E(w.attend)+'</b><p>'+E(w.internalNote)+'</p></div>':'<div class="action-date-grid"><div><span>'+E(w.points)+'</span><b>'+N(v.score)+'</b></div><div><span>'+E(w.limit)+'</span><b>'+(violationLimit2(v)?N(violationLimit2(v).points)+' ('+violationLimit2(v).multiplier+'×)':'–')+'</b></div><div><span>'+E(w.contact)+'</span><b>'+(v.contacted?'✓':E(w.open))+'</b></div></div>')+(v.note?'<div class="live-note live-violation-comment"><b>'+E(w.note)+'</b><p>'+E(v.note==='Imported from NAP-wide ScreenRecording test for selected event occurrence'?w.import:v.note)+'</p></div>':'')+'<div class="live-violation-proof"><b>'+E(w.shot)+'</b><div class="live-evidence" data-vio="'+E(v.id)+'"><div class="live-empty-state">'+E(w.noShot)+'</div></div></div></div></article>').join(''):'<div class="live-empty-state">'+E(w.none)+'</div>')+'</div><section class="card live-player-comments"><div class="card-head"><div><div class="card-title">'+E(w.file)+'</div><div class="card-sub">'+E(w.notLinked)+'</div></div></div><div class="card-body live-list" id="liveViolationPlayerComments"><div class="live-empty-state">'+E(w.noFile)+'</div></div></section>';
   body.querySelectorAll('.live-edit-violation').forEach(b=>b.onclick=()=>openViolationEditor2(b.dataset.id));
-  body.querySelectorAll('.live-delete-violation').forEach(b=>b.onclick=()=>{const v=S.v.find(x=>String(x.id)===String(b.dataset.id));deleteViolation2(v)});
-  body.querySelectorAll('.live-violation-message').forEach(b=>b.onclick=()=>openPlayerMessage2(b.dataset.id));
+  body.querySelectorAll('.live-delete-violation').forEach(b=>b.onclick=()=>{const v=S.v.find(x=>String(x.id)===String(b.dataset.id));if(canDeleteViolation2(v))deleteViolation2(v)});
   body.querySelectorAll('.live-shared-form').forEach(form=>form.onsubmit=e=>{e.preventDefault();saveSharedSpending2(form,name)});
   const destination=body.querySelector('#liveViolationPlayerComments');
   // These are player-wide file comments, not evidence that a specific violation caused them.
@@ -1756,7 +1619,8 @@ async function paintProfileTab2(name,tab){
  if(tab==='actions'){body.innerHTML='<div class="live-list">'+(X.length?X.map(profileActionCard2).join(''):'<div class="live-empty-state">Keine Maßnahmen.</div>')+'</div>';bindProfileR1Timers2();return}
  if(tab==='performance'){body.innerHTML='<div class="live-empty-state">Performance wird geladen …</div>';try{const rows=await rpc('get_player_performance_history',{p_player_id:P.id});body.innerHTML='<div class="live-list">'+((rows||[]).length?rows.map(r=>'<div class="live-row"><div><b>'+E(r.performance_type==='kvk_prep'?'KvK Prep':'Alliance Mobilization')+'</b><small>'+E(monthYear2(r.period_start||r.period_end)||'Ohne Monat')+' · '+E(r.label||r.event_name||'')+(r.server_rank?' · Server #'+E(r.server_rank):'')+' · '+E(r.source_type||'')+'</small></div><strong>'+N(r.score)+'</strong></div>').join(''):'<div class="live-empty-state">Keine Performance-Daten.</div>')+'</div>'}catch(err){body.innerHTML='<div class="live-empty-state">'+E(err.message||String(err))+'</div>'}return}
  if(tab==='comments'){body.innerHTML='<section class="card"><div class="card-body"><form id="liveCommentForm" class="live-form"><label>Interner Aktenkommentar<textarea id="liveCommentText" maxlength="1000"></textarea></label><button class="btn primary">Kommentar speichern</button></form><div id="liveComments" class="live-list" style="margin-top:12px"></div></div></section>';const paint=async()=>{const rows=await rpc('get_player_file_comments',{p_player_id:P.id}),box=document.getElementById('liveComments');box.innerHTML=(rows||[]).length?rows.map(r=>'<div class="live-row"><div><b>'+E(r.author_alliance||S.a)+'</b><small>'+E(r.comment)+'</small></div><time class="muted tiny">'+E(D(r.created_at))+'</time></div>').join(''):'<div class="live-empty-state">Noch keine Kommentare.</div>'};await paint();document.getElementById('liveCommentForm').onsubmit=async e=>{e.preventDefault();const text=document.getElementById('liveCommentText').value.trim();if(!text)return;await rpc('add_player_file_comment',{p_player_id:P.id,p_comment:text});document.getElementById('liveCommentText').value='';await paint()};return}
-  const hw={de:{violation:'Verstoß',action:'Maßnahme',level:'Stufe',none:'Keine Historie.'},en:{violation:'Violation',action:'Action',level:'Level',none:'No history.'},fr:{violation:'Infraction',action:'Mesure',level:'Niveau',none:'Aucun historique.'},es:{violation:'Infracción',action:'Medida',level:'Nivel',none:'Sin historial.'}}[L()]||{violation:'Verstoß',action:'Maßnahme',level:'Stufe',none:'Keine Historie.'};const events=[...V.map(v=>({d:v.occurred_at||v.created_at,t:v.event_name,s:v.phase_name||'',k:hw.violation})),...X.map(x=>({d:x.created_at,t:hw.level+' '+x.level,s:profileActionLabel2(x),k:hw.action}))].filter(x=>x.d).sort((a,b)=>new Date(b.d)-new Date(a.d));body.innerHTML='<div class="live-list">'+(events.length?events.map(x=>'<div class="live-row"><div><b>'+E(x.k)+' · '+E(x.t||'–')+'</b><small>'+E(x.s||'')+'</small></div><time class="muted tiny">'+E(D(x.d))+'</time></div>').join(''):'<div class="live-empty-state">'+E(hw.none)+'</div>')+'</div>';
+ const hw=profileWords2();
+ const events=[...V.map(v=>({d:v.occurred_at||v.created_at,t:v.event_name,s:v.phase_name||'',k:hw.historyViolation})),...X.map(x=>({d:x.created_at,t:hw.historyStage+' '+x.level,s:profileActionLabel2(x),k:hw.historyAction}))].filter(x=>x.d).sort((a,b)=>new Date(b.d)-new Date(a.d));body.innerHTML='<div class="live-list">'+(events.length?events.map(x=>'<div class="live-row"><div><b>'+E(x.k)+' · '+E(x.t||'–')+'</b><small>'+E(x.s||'')+'</small></div><time class="muted tiny">'+E(D(x.d))+'</time></div>').join(''):'<div class="live-empty-state">'+E(hw.historyNone)+'</div>')+'</div>';
 }
 const POST_CONTACT_REVIEW_TEXT2={
  de:{required:'Prüfung erforderlich',notice:'Punkte nach Kontakt erkannt. Ein höherer OCR-Wert allein ist kein Beweis.',newScore:'Neuer Score nach Kontakt erkannt',contactScore:'Kontakt-Score',proof:'Ein höherer OCR-Wert allein ist kein Beweis für weiteres Ausgeben.',source:'Quelle',open:'Prüfung offen',confirm:'Weiteres Ausgeben bestätigen',dismiss:'Ohne Bestätigung schließen',confirmQ:'Nur bestätigen, wenn sicher ist, dass der Spieler nach der Kontaktaufnahme erneut ausgegeben hat. Dadurch kann die nächste Sanktionsstufe entstehen. Bestätigen?',dismissQ:'Diesen Prüffall ohne weitere Sanktionsstufe schließen?',section:'Weiteres Ausgeben prüfen',sectionSub:'Nur deine Allianz kann diese Fälle bestätigen und damit eine weitere Sanktionsstufe auslösen.',openSuffix:'offen'},
@@ -1784,46 +1648,6 @@ function renderNotifications2(){
  const list=document.getElementById('notificationList'),badge=document.querySelector('#bellBtn .badge-count');if(!list)return;const rows=liveNotifications2();if(badge){badge.textContent=rows.length;badge.style.display=rows.length?'grid':'none'}list.innerHTML=rows.length?rows.map(x=>'<button class="notification-item unread" data-live-notify="'+E(x.go)+'"><span class="notification-dot"></span><span><b>'+E(x.title)+'</b><small>'+E(x.copy)+'</small></span></button>').join(''):'<div class="live-empty-state">Keine neuen Meldungen.</div>';list.querySelectorAll('[data-live-notify]').forEach(b=>b.onclick=()=>{setView(b.dataset.liveNotify);document.getElementById('notificationPanel')?.classList.remove('show');document.getElementById('overlay')?.classList.remove('show')})}
 const NAP_ALLIANCES2=new Set(['NRW','THM','NWO','NwO','CWR','PxR']);
 function isNapAlliance2(code){return !!code&&NAP_ALLIANCES2.has(String(code))}
-const MANUAL_TRANSFER_WORDS2={
- de:{button:'Spieler verschieben',title:'Spieler manuell verschieben',sub:'Eigene Spieler direkt einer anderen NAP-Allianz oder dem Pool zuordnen.',player:'Spieler',target:'Ziel',pool:'Pool · ohne Allianz',hint:'Die Spielerakte samt zugehörigen Verstößen und Maßnahmen wird zur Zielallianz verschoben. Im Pool bleibt sie serverweit ohne aktive Allianzzuordnung.',cancel:'Abbrechen',confirm:'Verschieben',question:'Diesen Spieler wirklich verschieben?',saving:'Verschiebe …',empty:'Keine Spieler verfügbar.'},
- en:{button:'Move player',title:'Move player manually',sub:'Assign one of your players directly to another NAP alliance or the Pool.',player:'Player',target:'Target',pool:'Pool · no alliance',hint:'The player file, including linked violations and actions, moves to the target alliance. In the Pool it remains server-wide without an active alliance assignment.',cancel:'Cancel',confirm:'Move',question:'Move this player now?',saving:'Moving …',empty:'No players available.'},
- fr:{button:'Déplacer un joueur',title:'Déplacer un joueur manuellement',sub:'Attribuer directement un joueur à une autre alliance NAP ou au Pool.',player:'Joueur',target:'Destination',pool:'Pool · sans alliance',hint:'Le dossier du joueur, y compris les infractions et mesures liées, est déplacé vers l’alliance cible. Dans le Pool, il reste sans alliance active.',cancel:'Annuler',confirm:'Déplacer',question:'Déplacer ce joueur maintenant ?',saving:'Déplacement …',empty:'Aucun joueur disponible.'},
- es:{button:'Mover jugador',title:'Mover jugador manualmente',sub:'Asignar directamente uno de tus jugadores a otra alianza NAP o al Pool.',player:'Jugador',target:'Destino',pool:'Pool · sin alianza',hint:'El expediente del jugador, incluidas las infracciones y medidas vinculadas, se mueve a la alianza de destino. En el Pool queda sin alianza activa.',cancel:'Cancelar',confirm:'Mover',question:'¿Mover este jugador ahora?',saving:'Moviendo …',empty:'No hay jugadores disponibles.'}
-};
-function manualTransferWords2(){return MANUAL_TRANSFER_WORDS2[L()]||MANUAL_TRANSFER_WORDS2.de}
-async function openManualTransfer2(){
-  const w=manualTransferWords2();
-  document.getElementById('liveManualTransferModal')?.remove();
-  let alliances=[];
-  try{alliances=await rpc('get_public_alliances',{})||[]}catch(err){alert(err.message||String(err));return}
-  const targets=(alliances||[]).map(x=>x.alliance_code).filter(Boolean).filter(x=>x!==S.a);
-  const players=[...(S.p||[])].sort((a,b)=>String(a.name||a.player_name||'').localeCompare(String(b.name||b.player_name||''),loc(),{sensitivity:'base'}));
-  const modal=document.createElement('div');modal.id='liveManualTransferModal';modal.className='modal-backdrop';
-  modal.innerHTML='<div class="modal-card"><div class="modal-head"><div><b>'+E(w.title)+'</b><small>'+E(w.sub)+'</small></div><button class="icon-btn live-transfer-close" type="button">×</button></div>'+
-   (players.length?'<form id="liveManualTransferForm" class="live-form"><label>'+E(w.player)+'<select id="liveManualTransferPlayer">'+players.map(p=>'<option value="'+E(p.id)+'">'+E(p.name||p.player_name||'–')+' · ID '+E(p.game_id||'–')+'</option>').join('')+'</select></label><label>'+E(w.target)+'<select id="liveManualTransferTarget"><option value="__POOL__">'+E(w.pool)+'</option>'+targets.map(a=>'<option value="'+E(a)+'">'+E(a)+'</option>').join('')+'</select></label><div class="live-note">'+E(w.hint)+'</div><div class="hero-actions"><button class="btn primary" type="submit">'+E(w.confirm)+'</button><button class="btn secondary live-transfer-close" type="button">'+E(w.cancel)+'</button></div><div id="liveManualTransferStatus" class="live-status"></div></form>':'<div class="live-empty-state">'+E(w.empty)+'</div>')+
-   '</div>';
-  document.body.appendChild(modal);
-  modal.querySelectorAll('.live-transfer-close').forEach(b=>b.onclick=()=>modal.remove());
-  modal.onclick=e=>{if(e.target===modal)modal.remove()};
-  const form=document.getElementById('liveManualTransferForm');
-  if(form)form.onsubmit=async e=>{
-    e.preventDefault();
-    const pid=document.getElementById('liveManualTransferPlayer')?.value;
-    const target=document.getElementById('liveManualTransferTarget')?.value;
-    const out=document.getElementById('liveManualTransferStatus');
-    if(!pid||!target)return;
-    if(!confirm(w.question))return;
-    if(out)out.textContent=w.saving;
-    try{
-      await rpc('transfer_player_to_alliance',{p_player_id:pid,p_target_alliance:target});
-      modal.remove();
-      await load();
-      renderHomeFull2();
-      renderPlayers2();
-      renderNotifications2();
-    }catch(err){if(out)out.textContent=err.message||String(err)}
-  };
-}
 function transferRow2(x){
  const ownSource=x.from_alliance===S.a,ownTarget=x.to_alliance===S.a,watching=x.status==='watching',ready=x.status==='ready';
  const inboundExternal=ownTarget&&(!x.from_alliance||!isNapAlliance2(x.from_alliance));
@@ -1851,7 +1675,7 @@ async function markTransferTemporary2(id,rejectIncoming=false){
 }
 function postContactReviewCard2(r){
  const P=p(r.player_name),source=r.detected_by_alliance&&r.detected_by_alliance!==S.a?r.detected_by_alliance:'ScreenRecording';
- const date=r.recording_day?new Date(String(r.recording_day)+'T00:00:00Z').toLocaleDateString(loc(),{timeZone:'UTC'}):'–';
+ const date=r.recording_day?new Date(String(r.recording_day)+'T00:00:00Z').toLocaleDateString(loc()):'–';
  return '<div class="action-item home-v2-action post-contact-review-card"><div><div class="player-line">'+avatarHtml(P,'player-avatar')+
   '<div><div class="player-name">'+E(r.player_name||'–')+'</div><div class="player-id">ID '+E(r.player_game_id||P.game_id||'–')+' · '+E(r.event_name||'')+' · '+E(r.phase_name||'')+' · '+E(date)+'</div></div></div>'+
   '<div class="live-note" style="margin-top:9px"><b>'+E(postContactReviewText2('newScore'))+'</b><br>'+
@@ -1884,7 +1708,7 @@ const HOME_SYNC_WORDS2={
 function exactDateTime2(value){
  if(!value)return '–';
  const d=new Date(value);if(Number.isNaN(d.getTime()))return '–';
- return d.toLocaleString(loc(),{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'UTC'})+' UTC';
+ return d.toLocaleString(loc(),{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
 function relativeSyncAge2(value){
  const w=HOME_SYNC_WORDS2[L()]||HOME_SYNC_WORDS2.de;
@@ -1913,15 +1737,8 @@ const LEVEL4_HOME_WORDS2={
  es:{eyebrow:'Exclusión NAP ampliada',single:'Un jugador de nivel 4 sigue/está de nuevo en una alianza NAP',multi:'Jugadores de nivel 4 siguen/están de nuevo en alianzas NAP',section:'Nivel 4 en el roster',sectionSub:'Durante una exclusión NAP ampliada, estos jugadores no deben permanecer ni ser aceptados en una alianza NAP.',cases:'casos',open:'Ver todos los casos',notice:'Nivel 4 · el jugador debe ser expulsado y no debe ser aceptado en una alianza.'}
 };
 function level4HomeWords2(){return LEVEL4_HOME_WORDS2[L()]||LEVEL4_HOME_WORDS2.de}
-const HOME_OVERDUE_WORDS2={
- de:{eyebrow:'NAP-weite Meldung · laut Tracker',overdue:'Maßnahmen über der 24h-Frist',level:'Stufe',deadline:'über der 24h-Frist',only:'Nur die betroffene Allianz kann die Umsetzung im Spiel bestätigen.',reported:'offen gemeldet',open:'NAP öffnen'},
- en:{eyebrow:'NAP-wide notice · according to tracker',overdue:'actions over the 24h deadline',level:'Level',deadline:'over the 24h deadline',only:'Only the affected alliance can confirm implementation in the game.',reported:'reported open',open:'Open NAP'},
- fr:{eyebrow:'Alerte NAP · selon le tracker',overdue:'mesures au-delà du délai de 24 h',level:'Niveau',deadline:'au-delà du délai de 24 h',only:'Seule l’alliance concernée peut confirmer l’application dans le jeu.',reported:'signalées ouvertes',open:'Ouvrir NAP'},
- es:{eyebrow:'Aviso NAP · según el tracker',overdue:'medidas fuera del plazo de 24 h',level:'Nivel',deadline:'fuera del plazo de 24 h',only:'Solo la alianza afectada puede confirmar la aplicación en el juego.',reported:'abiertas notificadas',open:'Abrir NAP'}
-};
-function homeOverdueWords2(){return HOME_OVERDUE_WORDS2[L()]||HOME_OVERDUE_WORDS2.de}
 function homeV2PriorityPanels2(A){
- const notice=S.o?.[0],own=A?.[0],hosts=S.level4Hosting||[],ow=homeOverdueWords2();let html='';
+ const notice=S.o?.[0],own=A?.[0],hosts=S.level4Hosting||[];let html='';
  if(hosts.length){
   const hw=level4HomeWords2();
   html+='<article class="priority-alert critical"><div class="priority-icon">4</div><div class="priority-main">'+
@@ -1931,11 +1748,11 @@ function homeV2PriorityPanels2(A){
    '</div><button type="button" class="btn small secondary" data-home-level4-alert>'+E(hw.open)+'</button></article>';
  }
  if(notice){
-   html+='<article class="priority-alert critical"><div class="priority-icon">!</div><div class="priority-main">'+
-    '<div class="priority-eyebrow">'+E(ow.eyebrow)+'</div><b>'+S.o.length+' '+E(ow.overdue)+'</b>'+
-    '<p>'+E(notice.alliance_code||'')+' · '+E(notice.player_name||'–')+' · '+E(ow.level)+' '+E(notice.level)+' · '+E(durLong2(Number(notice.overdue_seconds||0)*1000))+' '+E(ow.deadline)+'. '+E(ow.only)+'</p>'+
-    '<div class="alert-meta"><span class="pill red">'+S.o.length+' '+E(ow.reported)+'</span><span class="pill">'+E(notice.alliance_code||'')+'</span></div>'+
-    '</div><button type="button" class="btn small secondary" data-home-nap-alert>'+E(ow.open)+'</button></article>';
+  html+='<article class="priority-alert critical"><div class="priority-icon">!</div><div class="priority-main">'+
+   '<div class="priority-eyebrow">NAP-weite Meldung · laut Tracker</div><b>'+S.o.length+' Maßnahmen über der 24h-Frist</b>'+
+   '<p>'+E(notice.alliance_code||'')+' · '+E(notice.player_name||'–')+' · Stufe '+E(notice.level)+' · '+E(durLong2(Number(notice.overdue_seconds||0)*1000))+' über der 24h-Frist. Nur die betroffene Allianz kann die Umsetzung im Spiel bestätigen.</p>'+
+   '<div class="alert-meta"><span class="pill red">'+S.o.length+' offen gemeldet</span><span class="pill">'+E(notice.alliance_code||'')+'</span></div>'+
+   '</div><button type="button" class="btn small secondary" data-home-nap-alert>NAP öffnen</button></article>';
  }
  if(own){
   html+='<article class="priority-alert own"><div class="priority-icon">◷</div><div class="priority-main">'+
@@ -1947,18 +1764,17 @@ function homeV2PriorityPanels2(A){
  return html?'<div class="priority-grid home-v2-priorities">'+html+'</div>':'';
 }
 function renderHomeFull2(){
- const v=document.getElementById('view-home');if(!v)return;const A=actions(),recent=S.v.slice(0,8),timers=activeOwnTimers2(),tw=timerViewWords2();
+ const v=document.getElementById('view-home');if(!v)return;const A=actions(),recent=S.v.slice(0,8);
  v.innerHTML='<div class="hero"><div><div class="kicker">Kingdom 1044 · '+E(S.a)+'</div><h1>Dein NAP-Lagebild auf einen Blick.</h1><p>Eigene Maßnahmen, NAP-weite Hinweise und relevante Allianzwechsel – sauber nach Zuständigkeit getrennt.</p></div><div class="home-hero-tools"><div class="hero-actions"><button class="btn primary" data-go="add">＋ Verstoß eintragen</button><button class="btn secondary" data-go="players">Spielerakten</button></div>'+homeSyncBadge2()+'</div></div>'+
  homeV2PriorityPanels2(A)+
  '<div class="grid stat-grid home-kpis"><div class="stat-card"><div class="stat-top"><span>Eigene offene Maßnahmen</span></div><div class="stat-value">'+A.length+'</div><div class="stat-sub">'+E(S.a)+'</div></div><div class="stat-card"><div class="stat-top"><span>NAP-weit überfällig*</span></div><div class="stat-value">'+S.o.length+'</div><div class="stat-sub">*laut Tracker · 24h-Frist</div></div><div class="stat-card"><div class="stat-top"><span>Aktive NAP OUT</span></div><div class="stat-value">'+S.e.length+'</div><div class="stat-sub">NAP-weit</div></div><div class="stat-card"><div class="stat-top"><span>Allianzwechsel</span></div><div class="stat-value">'+S.t.length+'</div><div class="stat-sub">nur '+E(S.a)+' betreffend</div></div></div>'+
  '<div class="home-main-grid"><div class="stack">'+
  (S.reviews.length?'<section class="card post-contact-review-panel"><div class="card-head"><div><div class="card-title">'+E(postContactReviewText2('section'))+'</div><div class="card-sub">'+E(postContactReviewText2('sectionSub'))+'</div></div><span class="pill gold">'+S.reviews.length+' '+E(postContactReviewText2('openSuffix'))+'</span></div><div class="card-body">'+S.reviews.map(postContactReviewCard2).join('')+'</div></section>':'')+
- '<section class="card home-v2-action-panel"><div class="card-head"><div><div class="card-title">Mein Handlungsbedarf</div><div class="card-sub">Spieler, aktuelle Stufe und nächste Aktion</div></div><div class="hero-actions"><span class="pill gold">'+A.length+' offen</span><button type="button" class="btn small secondary home-v2-actions-toggle" aria-expanded="true">Einklappen</button></div></div><div class="card-body home-v2-actions-body">'+(A.length?A.map(a=>{const P=p(a.name),lab=a.actionLevel===1?'Stufe 1 · Kontakt':a.actionLevel===2?'Stufe 2 · R1':a.actionLevel===3?'Stufe 3 · 24h NAP OUT':'Stufe 4 · Extended',b=a.actionLevel===1?'<button class="btn small primary n2act" data-k="contact" data-id="'+E(a.v.id)+'">'+E(t('contact'))+'</button>':a.actionLevel===2?(a.s?.completed&&(!a.s.started_at||!a.s.end_at)?'<div class="r1-home-timer"><input class="r1-home-end" type="datetime-local" aria-label="End (UTC)" title="UTC"><span class="muted tiny">UTC</span><button class="btn small primary live-r1-timer" data-id="'+E(a.s.id)+'">Timer setzen</button></div>':'<button class="btn small primary n2act" data-k="r1" data-id="'+E(a.s.id)+'">'+E(t('r1'))+'</button>'):a.actionLevel===3?'<button class="btn small primary n2act" data-k="nap" data-id="'+E(a.s.id)+'">'+E(t('nap'))+'</button>':a.actionLevel===4?'<button class="btn small primary n2open" data-p="'+E(a.name)+'">'+E(extendedActionWords2().start)+'</button>':'';return '<div class="action-item home-v2-action"><div><div class="player-line">'+avatarHtml(P,'player-avatar')+'<div><div class="player-name">'+E(a.name)+'</div><div class="player-id">ID '+E(P.game_id||'–')+' · '+E(S.a)+'</div></div></div>'+homeV2Stages2(a.l)+'</div><div class="action-right"><span class="pill gold">'+E(lab)+'</span>'+(a.actionLevel!==a.l?'<span class="muted tiny">Aktuelle Stufe '+E(a.l)+'</span>':'')+'<span class="deadline">'+E(dl(a))+'</span><div class="home-action-buttons">'+b+'<button class="btn small secondary n2message" data-id="'+E(a.s.id)+'" type="button">'+E(playerMessageUi2().open)+'</button><button class="mini-link n2open" data-p="'+E(a.name)+'">Öffnen</button></div></div></div>'}).join(''):'<div class="live-empty-state">✓ Aktuell kein eigener Handlungsbedarf.</div>')+'</div></section>'+
-  (timers.length?'<section class="card home-v2-timer-panel"><div class="card-head"><div><div class="card-title">'+E(tw.title)+'</div><div class="card-sub">'+E(tw.sub)+'</div></div><span class="pill red">'+timers.length+'</span></div><div class="card-body live-list">'+timers.map(s=>'<div class="live-row"><div><b>'+E(s.player_name||'–')+'</b><small>'+E(tw.level)+' '+E(s.level)+' · '+E(tw.ends)+': '+E(D(s.end_at))+'</small></div><div class="home-timer-right"><strong data-timer-end="'+E(s.end_at)+'">'+E(timerRemaining2(s.end_at))+'</strong><button class="mini-link n2open" data-p="'+E(s.player_name||'')+'">'+E(tw.open)+'</button></div></div>').join('')+'</div></section>':'')+
+ '<section class="card home-v2-action-panel"><div class="card-head"><div><div class="card-title">Mein Handlungsbedarf</div><div class="card-sub">Spieler, aktuelle Stufe und nächste Aktion</div></div><div class="hero-actions"><span class="pill gold">'+A.length+' offen</span><button type="button" class="btn small secondary home-v2-actions-toggle" aria-expanded="true">Einklappen</button></div></div><div class="card-body home-v2-actions-body">'+(A.length?A.map(a=>{const P=p(a.name),lab=a.actionLevel===1?'Stufe 1 · Kontakt':a.actionLevel===2?'Stufe 2 · R1':a.actionLevel===3?'Stufe 3 · 24h NAP OUT':'Stufe 4 · Extended',b=a.actionLevel===1?'<button class="btn small primary n2act" data-k="contact" data-id="'+E(a.v.id)+'">'+E(t('contact'))+'</button>':a.actionLevel===2?(a.s?.completed&&(!a.s.started_at||!a.s.end_at)?'<div class="r1-home-timer"><input class="r1-home-end" type="datetime-local"><button class="btn small primary live-r1-timer" data-id="'+E(a.s.id)+'">Timer setzen</button></div>':'<button class="btn small primary n2act" data-k="r1" data-id="'+E(a.s.id)+'">'+E(t('r1'))+'</button>'):a.actionLevel===3?'<button class="btn small primary n2act" data-k="nap" data-id="'+E(a.s.id)+'">'+E(t('nap'))+'</button>':a.actionLevel===4?'<button class="btn small primary n2open" data-p="'+E(a.name)+'">'+E(extendedActionWords2().start)+'</button>':'';return '<div class="action-item home-v2-action"><div><div class="player-line">'+avatarHtml(P,'player-avatar')+'<div><div class="player-name">'+E(a.name)+'</div><div class="player-id">ID '+E(P.game_id||'–')+' · '+E(S.a)+'</div></div></div>'+homeV2Stages2(a.l)+'</div><div class="action-right"><span class="pill gold">'+E(lab)+'</span>'+(a.actionLevel!==a.l?'<span class="muted tiny">Aktuelle Stufe '+E(a.l)+'</span>':'')+'<span class="deadline">'+E(dl(a))+'</span><div class="home-action-buttons">'+b+'<button class="mini-link n2open" data-p="'+E(a.name)+'">Öffnen</button></div></div></div>'}).join(''):'<div class="live-empty-state">✓ Aktuell kein eigener Handlungsbedarf.</div>')+'</div></section>'+
  '<section class="card home-v2-recent"><div class="card-head"><div><div class="card-title">Letzte eigene Verfehlungen</div><div class="card-sub">Spieler und Punkte · private Details bleiben bei '+E(S.a)+'</div></div>'+(recent.length>4?'<button class="btn small secondary home-v2-expand" type="button" aria-expanded="false">Alle '+recent.length+' anzeigen</button>':'')+'</div><div class="card-body live-list">'+(recent.length?recent.map(homeV2RecentButton2).join(''):'<div class="live-empty-state">Keine Verfehlungen.</div>')+'</div></section></div>'+
  '<div class="stack"><section class="card"><div class="card-head"><div><div class="card-title">🔔 NAP-Benachrichtigungen</div><div class="card-sub">24h-Frist überschritten · laut Tracker</div></div><span class="pill red">'+S.o.length+'</span></div><div class="card-body live-list">'+(S.o.length?S.o.slice(0,6).map(x=>'<div class="live-row"><div><b>'+E(x.alliance_code)+' · '+E(x.player_name||'–')+'</b><small>Stufe '+E(x.level)+'</small></div><span class="pill red">'+E(durLong2(Number(x.overdue_seconds||0)*1000))+'</span></div>').join(''):'<div class="live-empty-state">Keine überfälligen Maßnahmen.</div>')+'</div></section>'+
- '<section class="card"><div class="card-head"><div><div class="card-title">Allianzwechsel</div><div class="card-sub">nur Quelle oder Ziel '+E(S.a)+'</div></div><div class="hero-actions"><span class="pill">'+S.t.length+'</span><button class="btn small secondary live-manual-transfer" type="button">↔ '+E(manualTransferWords2().button)+'</button></div></div><div class="card-body live-list">'+(S.t.length?S.t.map(transferRow2).join(''):'<div class="live-empty-state">Keine relevanten Wechsel.</div>')+'</div></section><section class="card" id="liveHomePerformance"><div class="card-body"><div class="live-empty-state">Performance wird geladen …</div></div></section></div></div>';
- v.querySelectorAll('[data-home-nap-alert]').forEach(b=>b.onclick=()=>{liveNapTab='alerts';setView('nap')});v.querySelectorAll('[data-home-level4-alert]').forEach(b=>b.onclick=()=>{liveNapTab='alerts';setView('nap')});v.querySelectorAll('.home-v2-actions-toggle').forEach(b=>b.onclick=()=>{const body=b.closest('.home-v2-action-panel')?.querySelector('.home-v2-actions-body');if(!body)return;const expanded=b.getAttribute('aria-expanded')!=='false';b.setAttribute('aria-expanded',String(!expanded));body.hidden=expanded;b.textContent=expanded?'Ausklappen':'Einklappen'});v.querySelectorAll('.n2act').forEach(b=>b.onclick=()=>doAct(b.dataset.k,b.dataset.id));v.querySelectorAll('.n2message').forEach(b=>b.onclick=()=>openPlayerMessage2(b.dataset.id));v.querySelectorAll('.live-r1-timer').forEach(b=>b.onclick=()=>setR1Timer2(b.dataset.id,b.closest('.r1-home-timer')?.querySelector('.r1-home-end')));v.querySelectorAll('.n2open').forEach(b=>b.onclick=()=>openProfile2(b.dataset.p));v.querySelectorAll('.home-v2-expand').forEach(b=>b.onclick=()=>{const card=b.closest('.home-v2-recent'),expanded=card.classList.toggle('expanded');b.setAttribute('aria-expanded',String(expanded));b.textContent=expanded?'Weniger anzeigen':'Alle '+recent.length+' anzeigen'});v.querySelectorAll('.live-transfer-confirm').forEach(b=>b.onclick=()=>confirmTransfer2(b.dataset.id));v.querySelectorAll('.live-transfer-temp').forEach(b=>b.onclick=()=>markTransferTemporary2(b.dataset.id,b.dataset.reject==='1'));v.querySelectorAll('.live-manual-transfer').forEach(b=>b.onclick=()=>openManualTransfer2());v.querySelectorAll('.live-post-contact-confirm').forEach(b=>b.onclick=()=>resolvePostContactReview2(b.dataset.reviewId,true));v.querySelectorAll('.live-post-contact-dismiss').forEach(b=>b.onclick=()=>resolvePostContactReview2(b.dataset.reviewId,false));renderHomePerformance2();renderNotifications2();
+ '<section class="card"><div class="card-head"><div><div class="card-title">Allianzwechsel</div><div class="card-sub">nur Quelle oder Ziel '+E(S.a)+'</div></div><span class="pill">'+S.t.length+'</span></div><div class="card-body live-list">'+(S.t.length?S.t.map(transferRow2).join(''):'<div class="live-empty-state">Keine relevanten Wechsel.</div>')+'</div></section><section class="card" id="liveHomePerformance"><div class="card-body"><div class="live-empty-state">Performance wird geladen …</div></div></section></div></div>';
+ v.querySelectorAll('[data-home-nap-alert]').forEach(b=>b.onclick=()=>{liveNapTab='alerts';setView('nap')});v.querySelectorAll('[data-home-level4-alert]').forEach(b=>b.onclick=()=>{liveNapTab='alerts';setView('nap')});v.querySelectorAll('.home-v2-actions-toggle').forEach(b=>b.onclick=()=>{const body=b.closest('.home-v2-action-panel')?.querySelector('.home-v2-actions-body');if(!body)return;const expanded=b.getAttribute('aria-expanded')!=='false';b.setAttribute('aria-expanded',String(!expanded));body.hidden=expanded;b.textContent=expanded?'Ausklappen':'Einklappen'});v.querySelectorAll('.n2act').forEach(b=>b.onclick=()=>doAct(b.dataset.k,b.dataset.id));v.querySelectorAll('.live-r1-timer').forEach(b=>b.onclick=()=>setR1Timer2(b.dataset.id,b.closest('.r1-home-timer')?.querySelector('.r1-home-end')));v.querySelectorAll('.n2open').forEach(b=>b.onclick=()=>openProfile2(b.dataset.p));v.querySelectorAll('.home-v2-expand').forEach(b=>b.onclick=()=>{const card=b.closest('.home-v2-recent'),expanded=card.classList.toggle('expanded');b.setAttribute('aria-expanded',String(expanded));b.textContent=expanded?'Weniger anzeigen':'Alle '+recent.length+' anzeigen'});v.querySelectorAll('.live-transfer-confirm').forEach(b=>b.onclick=()=>confirmTransfer2(b.dataset.id));v.querySelectorAll('.live-transfer-temp').forEach(b=>b.onclick=()=>markTransferTemporary2(b.dataset.id,b.dataset.reject==='1'));v.querySelectorAll('.live-post-contact-confirm').forEach(b=>b.onclick=()=>resolvePostContactReview2(b.dataset.reviewId,true));v.querySelectorAll('.live-post-contact-dismiss').forEach(b=>b.onclick=()=>resolvePostContactReview2(b.dataset.reviewId,false));renderHomePerformance2();renderNotifications2();
 }
 async function renderHomePerformance2(){
  const box=document.getElementById('liveHomePerformance');if(!box)return;try{const d=S.performance||await rpc('get_performance_dashboard',{});if(!S.performance)S.performance=d||null;const m=d?.mobilization,k=d?.kvk;box.innerHTML='<div class="card-head"><div><div class="card-title">Performance</div><div class="card-sub">kompakter Überblick</div></div><button class="mini-link" data-go="performance">Öffnen</button></div><div class="card-body live-list">'+(m?'<div class="live-row"><div><b>Alliance Mobilization</b><small>'+E(m.event?.label||'')+'</small></div><strong>'+N(m.total_score||0)+'</strong></div>':'')+(k?'<div class="live-row"><div><b>KvK Top 200</b><small>'+E(k.event?.label||'')+'</small></div><strong>'+N(k.known_top200_score||0)+'</strong></div>':'')+'</div>'}catch{box.innerHTML='<div class="card-body"><div class="live-empty-state">Keine Performance-Daten.</div></div>'}}
@@ -2006,7 +1822,7 @@ let liveNotificationFilter='all';
 function notificationReadSet2(){return new Set(S.notificationReads||[])}
 function notificationId2(x){return x.key||[x.cat,x.title,x.go].join('|')}
 async function markNotificationReads2(ids){
- if(isReadOnly2())return;
+  if(isReadOnly2())return;
  const clean=[...new Set((ids||[]).map(String).filter(id=>id&&id.length<=300))];
  if(!S.a||!clean.length)return;
  const url=C.u+'/rest/v1/notification_read_state?on_conflict=alliance_code,notification_id';
@@ -2051,9 +1867,9 @@ const LIVE_TRANSLATE={
   'Lawbook und Fälle.':'Lawbook and cases.','Aktuelle Versionen aus der Datenbank.':'Current versions from the database.','NAP Verstöße':'NAP violations','Alle Bereiche':'All categories','Law suchen …':'Search laws …','Ausnahmen':'Exceptions','Sanktionen':'Sanctions','NAP-Verstoß melden':'Report NAP violation','Fall speichern':'Save case','Beschreibung':'Description',
   'Minister-Ausschlüsse klar priorisiert.':'Minister restrictions clearly prioritized.','aktive Minister-Sperren':'active minister restrictions','beendet · 24h':'ended · 24h','König':'King','aktualisiert':'updated','Aktive Minister-Sperren':'Active minister restrictions','Beendet · letzte 24h':'Ended · last 24h',
   'Filterbarer Audit-Feed.':'Filterable audit feed.','Aktualisieren':'Refresh','Alle Allianzen':'All alliances','Uploads':'Uploads','Verstöße':'Violations','Gelöscht':'Deleted',
-  'Konfiguration getrennt von den Laws.':'Configuration separated from Laws.','Allgemein':'General','Event-Verfügbarkeit':'Event availability','Zielwerte':'Targets','Verstoß-Fenster':'Violation window','Warnfenster · Tage':'Warning window · days','Verfehlung gültig · Tage':'Violation valid · days','Speichern':'Save','Zielwerte speichern':'Save targets','manuell aktivieren':'enable manually','Freigabe entfernen':'remove override','sichtbar':'visible','✓ sichtbar':'✓ visible','ausgeblendet':'hidden',
+  'Konfiguration getrennt von den Laws.':'Configuration separated from Laws.','Zielwerte, Event-Verfügbarkeit und Performance.':'Targets, event availability and performance.','Allgemein':'General','Event-Verfügbarkeit':'Event availability','Zielwerte':'Targets','Warnfenster':'Warning window','Warnfenster · Tage':'Warning window · days','Law-14-Verstöße sind serverweit fest 28 Tage gültig. Diese Dauer kann nicht pro Allianz geändert werden.':'Law 14 violations are fixed at 28 days server-wide. This duration cannot be changed per alliance.','Speichern':'Save','Zielwerte speichern':'Save targets','manuell aktivieren':'enable manually','Freigabe entfernen':'remove override','sichtbar':'visible','ausgeblendet':'hidden',
   'Dein NAP-Lagebild auf einen Blick.':'Your NAP situation at a glance.','Einklappen':'Collapse','Ausklappen':'Expand','Eigene Maßnahmen, NAP-weite Hinweise und relevante Allianzwechsel – sauber nach Zuständigkeit getrennt.':'Your actions, NAP-wide notices and relevant alliance transfers – clearly separated by responsibility.','Eigene offene Maßnahmen':'Your open actions','NAP-weit überfällig':'NAP-wide overdue','Aktive NAP OUT':'Active NAP OUT','Allianzwechsel':'Alliance transfers','Mein Handlungsbedarf':'My action required','direkt auf Home erledigen':'complete directly on Home','Letzte eigene Verfehlungen':'Recent own violations','Performance wird geladen …':'Loading performance …',
-  'SPIELERPROFIL':'PLAYER PROFILE','Spielerakten':'Player files','Aktuelle Stufe':'Current stage','Verstöße gesamt':'total violations','Sprachen':'Languages','Player ID speichern':'Save Player ID','Maßnahmen':'Actions','Kommentare':'Comments','Historie':'History','Verstoß':'Violation','Maßnahme':'Action','erledigt':'done','offen':'open','Keine Historie.':'No history.','Keine Maßnahme vorhanden.':'No action available.','Ohne Monat':'No month','Keine Performance-Daten.':'No performance data.','Keine Maßnahmen.':'No actions.','Keine Verstöße.':'No violations.','Noch keine Kommentare.':'No comments yet.'
+  'SPIELERPROFIL':'PLAYER PROFILE','Spielerakten':'Player files','Aktuelle Stufe':'Current stage','Verstöße gesamt':'total violations','Sprachen':'Languages','Player ID speichern':'Save Player ID','Maßnahmen':'Actions','Kommentare':'Comments','Historie':'History','Keine Maßnahmen.':'No actions.','Keine Verstöße.':'No violations.','Noch keine Kommentare.':'No comments yet.'
  },
  fr:{
   'Verstoß erfassen':'Enregistrer une infraction','Manuell':'Manuel','Manuell eintragen':'Saisie manuelle','Spieler':'Joueur','Punkte':'Points','Zeitpunkt':'Heure','Notiz':'Note','Verstoß speichern':'Enregistrer l’infraction','Regelprüfung':'Vérification des règles','Importer laden':'Charger l’importateur',
@@ -2064,10 +1880,10 @@ const LIVE_TRANSLATE={
   'Lawbook und Fälle.':'Lawbook et cas.','Aktuelle Versionen aus der Datenbank.':'Versions actuelles de la base de données.','NAP Verstöße':'Infractions NAP','Alle Bereiche':'Toutes les catégories','Law suchen …':'Rechercher une Law …','Ausnahmen':'Exceptions','Sanktionen':'Sanctions','NAP-Verstoß melden':'Signaler une infraction NAP','Fall speichern':'Enregistrer le cas','Beschreibung':'Description',
   'Minister-Ausschlüsse klar priorisiert.':'Restrictions ministérielles clairement priorisées.','aktive Minister-Sperren':'restrictions ministérielles actives','König':'Roi','aktualisiert':'actualisé','Aktive Minister-Sperren':'Restrictions ministérielles actives','Beendet · letzte 24h':'Terminées · dernières 24 h',
   'Filterbarer Audit-Feed.':'Journal d’audit filtrable.','Aktualisieren':'Actualiser','Alle Allianzen':'Toutes les alliances','Uploads':'Uploads','Verstöße':'Infractions','Gelöscht':'Supprimé',
-  'Konfiguration getrennt von den Laws.':'Configuration séparée des Laws.','Allgemein':'Général','Event-Verfügbarkeit':'Disponibilité des événements','Zielwerte':'Objectifs','Verstoß-Fenster':'Fenêtre d’infraction','Warnfenster · Tage':'Fenêtre d’alerte · jours','Verfehlung gültig · Tage':'Infraction valable · jours','Speichern':'Enregistrer','Zielwerte speichern':'Enregistrer les objectifs','manuell aktivieren':'activer manuellement','Freigabe entfernen':'retirer l’activation','sichtbar':'visible','✓ sichtbar':'✓ visible','ausgeblendet':'masqué',
+  'Konfiguration getrennt von den Laws.':'Configuration séparée des Laws.','Zielwerte, Event-Verfügbarkeit und Performance.':'Objectifs, disponibilité des événements et performances.','Allgemein':'Général','Event-Verfügbarkeit':'Disponibilité des événements','Zielwerte':'Objectifs','Warnfenster':'Fenêtre d’alerte','Warnfenster · Tage':'Fenêtre d’alerte · jours','Law-14-Verstöße sind serverweit fest 28 Tage gültig. Diese Dauer kann nicht pro Allianz geändert werden.':'Les infractions Law 14 sont valables 28 jours sur tout le serveur. Cette durée ne peut pas être modifiée par alliance.','Speichern':'Enregistrer','Zielwerte speichern':'Enregistrer les objectifs','manuell aktivieren':'activer manuellement','Freigabe entfernen':'retirer l’activation','sichtbar':'visible','ausgeblendet':'masqué',
   'ScreenRecording und manuelle Eingabe sind getrennt, nutzen aber dieselben aktuellen Eventfreigaben und Regeln.':'ScreenRecording et la saisie manuelle sont séparés, mais utilisent les mêmes événements et règles actuels.','Grenze aus den Allianz-Einstellungen.':'Limite issue des paramètres de l’alliance.','Importer wird geladen …':'Chargement de l’importateur …','Importer bereit':'Importateur prêt','Maßnahmen anderer NAP-Allianzen, die nach 24h nicht umgesetzt wurden.':'Mesures des autres alliances NAP non appliquées après 24 h.','NAP Ban speichern':'Enregistrer le ban NAP','NAP Spending Exclusions':'Exclusions de dépenses NAP','Spending Exclusion speichern':'Enregistrer l’exclusion de dépenses','beendet · 24h':'terminé · 24 h','Eigene Maßnahmen, NAP-weite Hinweise und relevante Allianzwechsel – sauber nach Zuständigkeit getrennt.':'Vos mesures, alertes NAP et transferts pertinents – clairement séparés selon la responsabilité.','direkt auf Home erledigen':'à traiter directement sur Home','Performance wird geladen …':'Chargement des performances …','Noch keine Kommentare.':'Aucun commentaire pour le moment.',
   'Dein NAP-Lagebild auf einen Blick.':'Votre situation NAP en un coup d’œil.','Einklappen':'Réduire','Ausklappen':'Développer','Eigene offene Maßnahmen':'Vos mesures ouvertes','NAP-weit überfällig':'NAP en retard','Aktive NAP OUT':'NAP OUT actifs','Allianzwechsel':'Changements d’alliance','Mein Handlungsbedarf':'Mes actions requises','Letzte eigene Verfehlungen':'Infractions récentes de votre alliance',
-  'SPIELERPROFIL':'PROFIL JOUEUR','Spielerakten':'Dossiers joueurs','Aktuelle Stufe':'Niveau actuel','Verstöße gesamt':'infractions totales','Sprachen':'Langues','Player ID speichern':'Enregistrer Player ID','Maßnahmen':'Mesures','Kommentare':'Commentaires','Historie':'Historique','Verstoß':'Infraction','Maßnahme':'Mesure','erledigt':'terminé','offen':'ouvert','Keine Historie.':'Aucun historique.','Keine Maßnahme vorhanden.':'Aucune mesure disponible.','Ohne Monat':'Sans mois','Keine Performance-Daten.':'Aucune donnée de performance.','Keine Maßnahmen.':'Aucune mesure.','Keine Verstöße.':'Aucune infraction.'
+  'SPIELERPROFIL':'PROFIL JOUEUR','Spielerakten':'Dossiers joueurs','Aktuelle Stufe':'Niveau actuel','Verstöße gesamt':'infractions totales','Sprachen':'Langues','Player ID speichern':'Enregistrer Player ID','Maßnahmen':'Mesures','Kommentare':'Commentaires','Historie':'Historique','Keine Maßnahmen.':'Aucune mesure.','Keine Verstöße.':'Aucune infraction.'
  },
  es:{
   'Verstoß erfassen':'Registrar infracción','Manuell':'Manual','Manuell eintragen':'Registro manual','Spieler':'Jugador','Punkte':'Puntos','Zeitpunkt':'Hora','Notiz':'Nota','Verstoß speichern':'Guardar infracción','Regelprüfung':'Comprobación de reglas','Importer laden':'Cargar importador',
@@ -2078,19 +1894,19 @@ const LIVE_TRANSLATE={
   'Lawbook und Fälle.':'Lawbook y casos.','Aktuelle Versionen aus der Datenbank.':'Versiones actuales de la base de datos.','NAP Verstöße':'Infracciones NAP','Alle Bereiche':'Todas las categorías','Law suchen …':'Buscar Law …','Ausnahmen':'Excepciones','Sanktionen':'Sanciones','NAP-Verstoß melden':'Reportar infracción NAP','Fall speichern':'Guardar caso','Beschreibung':'Descripción',
   'Minister-Ausschlüsse klar priorisiert.':'Restricciones ministeriales claramente priorizadas.','aktive Minister-Sperren':'restricciones ministeriales activas','König':'Rey','aktualisiert':'actualizado','Aktive Minister-Sperren':'Restricciones ministeriales activas','Beendet · letzte 24h':'Finalizadas · últimas 24 h',
   'Filterbarer Audit-Feed.':'Registro de auditoría filtrable.','Aktualisieren':'Actualizar','Alle Allianzen':'Todas las alianzas','Uploads':'Uploads','Verstöße':'Infracciones','Gelöscht':'Eliminado',
-  'Konfiguration getrennt von den Laws.':'Configuración separada de las Laws.','Allgemein':'General','Event-Verfügbarkeit':'Disponibilidad de eventos','Zielwerte':'Objetivos','Verstoß-Fenster':'Ventana de infracción','Warnfenster · Tage':'Ventana de aviso · días','Verfehlung gültig · Tage':'Infracción válida · días','Speichern':'Guardar','Zielwerte speichern':'Guardar objetivos','manuell aktivieren':'activar manualmente','Freigabe entfernen':'quitar activación','sichtbar':'visible','✓ sichtbar':'✓ visible','ausgeblendet':'oculto',
+  'Konfiguration getrennt von den Laws.':'Configuración separada de las Laws.','Zielwerte, Event-Verfügbarkeit und Performance.':'Objetivos, disponibilidad de eventos y rendimiento.','Allgemein':'General','Event-Verfügbarkeit':'Disponibilidad de eventos','Zielwerte':'Objetivos','Warnfenster':'Ventana de aviso','Warnfenster · Tage':'Ventana de aviso · días','Law-14-Verstöße sind serverweit fest 28 Tage gültig. Diese Dauer kann nicht pro Allianz geändert werden.':'Las infracciones de Law 14 tienen una validez fija de 28 días en todo el servidor. Esta duración no se puede cambiar por alianza.','Speichern':'Guardar','Zielwerte speichern':'Guardar objetivos','manuell aktivieren':'activar manualmente','Freigabe entfernen':'quitar activación','sichtbar':'visible','ausgeblendet':'oculto',
   'ScreenRecording und manuelle Eingabe sind getrennt, nutzen aber dieselben aktuellen Eventfreigaben und Regeln.':'ScreenRecording y la entrada manual están separados, pero usan los mismos eventos y reglas actuales.','Grenze aus den Allianz-Einstellungen.':'Límite según la configuración de la alianza.','Importer wird geladen …':'Cargando importador …','Importer bereit':'Importador listo','Maßnahmen anderer NAP-Allianzen, die nach 24h nicht umgesetzt wurden.':'Medidas de otras alianzas NAP no aplicadas tras 24 h.','NAP Ban speichern':'Guardar ban NAP','NAP Spending Exclusions':'Exclusiones de gasto NAP','Spending Exclusion speichern':'Guardar exclusión de gasto','beendet · 24h':'finalizado · 24 h','Eigene Maßnahmen, NAP-weite Hinweise und relevante Allianzwechsel – sauber nach Zuständigkeit getrennt.':'Tus medidas, avisos NAP y cambios de alianza relevantes, claramente separados por responsabilidad.','direkt auf Home erledigen':'resolver directamente en Home','Performance wird geladen …':'Cargando rendimiento …','Noch keine Kommentare.':'Todavía no hay comentarios.',
   'Dein NAP-Lagebild auf einen Blick.':'Tu situación NAP de un vistazo.','Einklappen':'Contraer','Ausklappen':'Expandir','Eigene offene Maßnahmen':'Tus medidas abiertas','NAP-weit überfällig':'NAP vencido','Aktive NAP OUT':'NAP OUT activos','Allianzwechsel':'Cambios de alianza','Mein Handlungsbedarf':'Mis acciones pendientes','Letzte eigene Verfehlungen':'Infracciones recientes propias',
-  'SPIELERPROFIL':'PERFIL DEL JUGADOR','Spielerakten':'Expedientes','Aktuelle Stufe':'Nivel actual','Verstöße gesamt':'infracciones totales','Sprachen':'Idiomas','Player ID speichern':'Guardar Player ID','Maßnahmen':'Medidas','Kommentare':'Comentarios','Historie':'Historial','Verstoß':'Infracción','Maßnahme':'Medida','erledigt':'hecho','offen':'abierto','Keine Historie.':'Sin historial.','Keine Maßnahme vorhanden.':'No hay medida disponible.','Ohne Monat':'Sin mes','Keine Performance-Daten.':'No hay datos de rendimiento.','Keine Maßnahmen.':'No hay medidas.','Keine Verstöße.':'No hay infracciones.'
+  'SPIELERPROFIL':'PERFIL DEL JUGADOR','Spielerakten':'Expedientes','Aktuelle Stufe':'Nivel actual','Verstöße gesamt':'infracciones totales','Sprachen':'Idiomas','Player ID speichern':'Guardar Player ID','Maßnahmen':'Medidas','Kommentare':'Comentarios','Historie':'Historial','Keine Maßnahmen.':'No hay medidas.','Keine Verstöße.':'No hay infracciones.'
  }
 };
 function translateLiveTree2(root){
  const lc=L();if(lc==='de'||!root)return;const map=LIVE_TRANSLATE[lc]||{};
- const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){const raw=n.nodeValue,trim=raw.trim();if(!trim)continue;let rep=map[trim];if(!rep){const h=trim.match(/^(Verstoß|Maßnahme)\s+·\s+(.+)$/);if(h){const word=h[1]==='Verstoß'?(lc==='en'?'Violation':lc==='fr'?'Infraction':'Infracción'):(lc==='en'?'Action':lc==='fr'?'Mesure':'Medida');rep=word+' · '+h[2]}}if(!rep){const m=trim.match(/^Stufe\s+(\d+)(.*)$/);if(m){const word=lc==='en'?'Level':lc==='fr'?'Niveau':'Nivel';rep=word+' '+m[1]+m[2]}}if(rep)n.nodeValue=raw.replace(trim,rep)}
+ const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){const raw=n.nodeValue,trim=raw.trim();if(!trim)continue;let rep=map[trim];if(!rep){const m=trim.match(/^Stufe\s+(\d+)(.*)$/);if(m){const word=lc==='en'?'Level':lc==='fr'?'Niveau':'Nivel';rep=word+' '+m[1]+m[2]}}if(rep)n.nodeValue=raw.replace(trim,rep)}
  root.querySelectorAll('input[placeholder],textarea[placeholder]').forEach(el=>{const p=el.getAttribute('placeholder');if(map[p])el.setAttribute('placeholder',map[p])});
 }
 function wrapTranslation2(fn,id){return function(...args){const r=fn.apply(this,args);return Promise.resolve(r).finally(()=>translateLiveTree2(document.getElementById(id)))}}
-renderAddLive=wrapTranslation2(renderAddLive,'view-add');renderNapLive=wrapTranslation2(renderNapLive,'view-nap');renderKvkLive=wrapTranslation2(renderKvkLive,'view-kvk');renderLawsLive=wrapTranslation2(renderLawsLive,'view-laws');renderPerformanceLive=wrapTranslation2(renderPerformanceLive,'view-performance');renderCrownLive=wrapTranslation2(renderCrownLive,'view-crown');renderActivityLive=wrapTranslation2(renderActivityLive,'view-activity');renderSettingsLive=wrapTranslation2(renderSettingsLive,'view-settings');renderHomeFull2=wrapTranslation2(renderHomeFull2,'view-home');renderPlayers2=wrapTranslation2(renderPlayers2,'view-players');const paintProfileTabBase3=paintProfileTab2;paintProfileTab2=async function(...args){const r=await paintProfileTabBase3(...args);translateLiveTree2(document.getElementById('view-profile'));refreshSanctionTimerLabels2();return r};renderHome=renderHomeFull2;renderPlayers=renderPlayers2;
+renderAddLive=wrapTranslation2(renderAddLive,'view-add');renderNapLive=wrapTranslation2(renderNapLive,'view-nap');renderKvkLive=wrapTranslation2(renderKvkLive,'view-kvk');renderLawsLive=wrapTranslation2(renderLawsLive,'view-laws');renderPerformanceLive=wrapTranslation2(renderPerformanceLive,'view-performance');renderCrownLive=wrapTranslation2(renderCrownLive,'view-crown');renderActivityLive=wrapTranslation2(renderActivityLive,'view-activity');renderSettingsLive=wrapTranslation2(renderSettingsLive,'view-settings');renderHomeFull2=wrapTranslation2(renderHomeFull2,'view-home');renderPlayers2=wrapTranslation2(renderPlayers2,'view-players');renderHome=renderHomeFull2;renderPlayers=renderPlayers2;
 
 
 /* Navigation: the validated v7 inline handler delegates to the live setView override. */
