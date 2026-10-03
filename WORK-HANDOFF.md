@@ -42,6 +42,7 @@ That branch includes newer OCR/video compatibility work and must become `develop
 - Times shown in the app should use UTC.
 - Support is privacy-scoped; alliance users must not gain access to another alliance's private case details.
 - Law 15 (Event Rotation Enforcement): non-NAP players interfering with a ranking position designated for a NAP nominee may be declared unprotected for a duration determined by NAP leadership; otherwise non-NAP event participation remains allowed.
+- Transfer workflow: POOL → NAP transfers keep the 72-hour observation window and become confirmable only after a post-window successful roster observation; known-source transfers may be confirmable earlier under the existing authorization rules. Temporary/reject remains available to either involved alliance. Transfer UI labels must follow the selected DE/EN/FR/ES language.
 
 ## Infrastructure boundary
 
