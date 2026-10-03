@@ -305,7 +305,7 @@ async function syncCrownVisibility2(){
  let permitted=false;
  try{
   if(S.a){
-   const d=await rpc('get_crown_dashboard',{});
+   const d=await rpc('get_crown_dashboard_test',{});
    S.crown=d;
    // Backend is the authority for Crown access. Avoid a second frontend
    // alliance-code comparison that can incorrectly hide an authorized Crown login.
@@ -970,7 +970,7 @@ async function renderCrownLive(){
  const v=document.getElementById('view-crown');if(!v)return;const lw=law15Words2();
  v.innerHTML='<div class="hero"><div><div class="kicker">CROWN · LIVE</div><h1>'+E(lw.title)+'</h1><p>'+E(lw.sub)+'</p></div><div class="hero-actions"><span class="pill gold">'+E(lw.test)+'</span></div></div><div class="live-empty-state">Crown-Daten werden geladen …</div>';
  try{
-  const [d,l15]=await Promise.all([rpc('get_crown_dashboard',{}),rpc('get_law15_dashboard_test',{})]);
+  const [d,l15]=await Promise.all([rpc('get_crown_dashboard_test',{}),rpc('get_law15_dashboard_test',{})]);
   S.crown=d;S.law15=l15;
   const k=d?.king||l15?.king||{},rows=d?.restrictions||[],recent=d?.recently_ended||[],pending=l15?.pending||[],active=l15?.active_unprotected||[];
   const crownLang2={
