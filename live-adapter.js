@@ -856,7 +856,18 @@ async function uploadStorage2(bucket,path,file){
 }
 async function loadLaws2(){
  const [laws,cases,evidence]=await Promise.all([rpc('get_current_nap_laws_v2',{p_language:L()}),tab('nap_law_violations','select=*&order=occurred_at.desc'),tab('nap_law_evidence','select=*&order=created_at.asc')]);
- S.laws=laws||[];S.lawCases=cases||[];S.lawEvidence=evidence||[];
+ S.laws=(laws||[]).map(l=>{
+  if(String(l.law_key)!=='15')return l;
+  const copy={...l};
+  const txt={
+   de:{title:'Event Rotation & Resource-Saving Enforcement',short:'Non-NAP-Spieler müssen NAP-Eventrotationen und Law-14-Ressourcenlimits respektieren.',full:'Non-NAP players must respect NAP event rotations and Law #14 resource-saving limits. A first violation results in a warning to the player and their R5. Any further violation results in 7 days Unprotected under Law #5. Protection is restored automatically after 7 days, but the warning remains on record. The King’s alliance is responsible for handling and enforcing Law #15. Non-NAP players may otherwise participate in events normally.'},
+   en:{title:'Event Rotation & Resource-Saving Enforcement',short:'Non-NAP players must respect NAP event rotations and Law #14 resource-saving limits.',full:'Non-NAP players must respect NAP event rotations and Law #14 resource-saving limits. A first violation results in a warning to the player and their R5. Any further violation results in 7 days Unprotected under Law #5. Protection is restored automatically after 7 days, but the warning remains on record. The King’s alliance is responsible for handling and enforcing Law #15. Non-NAP players may otherwise participate in events normally.'},
+   fr:{title:'Event Rotation & Resource-Saving Enforcement',short:'Les joueurs Non-NAP doivent respecter les rotations NAP et les limites de ressources de la loi 14.',full:'Non-NAP players must respect NAP event rotations and Law #14 resource-saving limits. A first violation results in a warning to the player and their R5. Any further violation results in 7 days Unprotected under Law #5. Protection is restored automatically after 7 days, but the warning remains on record. The King’s alliance is responsible for handling and enforcing Law #15. Non-NAP players may otherwise participate in events normally.'},
+   es:{title:'Event Rotation & Resource-Saving Enforcement',short:'Los jugadores Non-NAP deben respetar las rotaciones NAP y los límites de recursos de la Ley 14.',full:'Non-NAP players must respect NAP event rotations and Law #14 resource-saving limits. A first violation results in a warning to the player and their R5. Any further violation results in 7 days Unprotected under Law #5. Protection is restored automatically after 7 days, but the warning remains on record. The King’s alliance is responsible for handling and enforcing Law #15. Non-NAP players may otherwise participate in events normally.'}
+  }[L()]||null;
+  if(txt){copy.title=txt.title;copy.short_summary=txt.short;copy.full_text=txt.full}
+  return copy;
+});S.lawCases=cases||[];S.lawEvidence=evidence||[];
 }
 async function renderLawsLive(){
  const v=document.getElementById('view-laws');if(!v)return;
