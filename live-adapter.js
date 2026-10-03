@@ -1791,6 +1791,13 @@ const MANUAL_TRANSFER_WORDS2={
  es:{button:'Mover jugador',title:'Mover jugador manualmente',sub:'Asignar directamente uno de tus jugadores a otra alianza NAP o al Pool.',player:'Jugador',target:'Destino',pool:'Pool · sin alianza',hint:'El expediente del jugador, incluidas las infracciones y medidas vinculadas, se mueve a la alianza de destino. En el Pool queda sin alianza activa.',cancel:'Cancelar',confirm:'Mover',question:'¿Mover este jugador ahora?',saving:'Moviendo …',empty:'No hay jugadores disponibles.'}
 };
 function manualTransferWords2(){return MANUAL_TRANSFER_WORDS2[L()]||MANUAL_TRANSFER_WORDS2.de}
+const TRANSFER_WORDS2={
+ de:{confirmNow:'Jetzt bestätigen',confirmMove:'Wechsel bestätigen',confirmIncoming:'Neuzugang bestätigen',waiting:'Bestätigung nach Beobachtungsfrist',incoming:'Eingang',outgoing:'Ausgang'},
+ en:{confirmNow:'Confirm now',confirmMove:'Confirm transfer',confirmIncoming:'Confirm incoming transfer',waiting:'Confirmation after observation period',incoming:'Incoming',outgoing:'Outgoing'},
+ fr:{confirmNow:'Confirmer maintenant',confirmMove:'Confirmer le transfert',confirmIncoming:'Confirmer l’arrivée',waiting:'Confirmation après la période d’observation',incoming:'Entrant',outgoing:'Sortant'},
+ es:{confirmNow:'Confirmar ahora',confirmMove:'Confirmar transferencia',confirmIncoming:'Confirmar llegada',waiting:'Confirmación tras el período de observación',incoming:'Entrante',outgoing:'Saliente'}
+};
+function transferWords2(){return TRANSFER_WORDS2[L()]||TRANSFER_WORDS2.de}
 async function openManualTransfer2(){
   const w=manualTransferWords2();
   document.getElementById('liveManualTransferModal')?.remove();
@@ -1825,6 +1832,7 @@ async function openManualTransfer2(){
   };
 }
 function transferRow2(x){
+ const w=transferWords2();
  const ownSource=x.from_alliance===S.a,ownTarget=x.to_alliance===S.a,watching=x.status==='watching',ready=x.status==='ready';
  const inbound=ownTarget&&!ownSource;
  const inboundExternal=inbound&&(!x.from_alliance||!isNapAlliance2(x.from_alliance));
@@ -1833,14 +1841,14 @@ function transferRow2(x){
    buttons+='<button class="btn small secondary live-transfer-temp" data-id="'+E(x.candidate_id)+'" data-reject="'+(inbound?'1':'0')+'">↩ '+E(inbound?t('rejectTemp'):t('tempTransfer'))+'</button>';
  }
  if(ownSource){
-   if(watching)buttons+='<button class="btn small primary live-transfer-confirm" data-id="'+E(x.candidate_id)+'">✓ Jetzt bestätigen</button>';
-   else if(ready)buttons+='<button class="btn small primary live-transfer-confirm" data-id="'+E(x.candidate_id)+'">✓ Wechsel bestätigen</button>';
+   if(watching)buttons+='<button class="btn small primary live-transfer-confirm" data-id="'+E(x.candidate_id)+'">✓ '+E(w.confirmNow)+'</button>';
+   else if(ready)buttons+='<button class="btn small primary live-transfer-confirm" data-id="'+E(x.candidate_id)+'">✓ '+E(w.confirmMove)+'</button>';
  }else if(inboundExternal){
-   if(x.from_alliance&&(watching||ready))buttons+='<button class="btn small primary live-transfer-confirm" data-id="'+E(x.candidate_id)+'">✓ Neuzugang bestätigen</button>';
-   else if(ready)buttons+='<button class="btn small primary live-transfer-confirm" data-id="'+E(x.candidate_id)+'">✓ Neuzugang bestätigen</button>';
-   else if(watching)buttons+='<span class="pill gold">Bestätigung nach Beobachtungsfrist</span>';
+   if(x.from_alliance&&(watching||ready))buttons+='<button class="btn small primary live-transfer-confirm" data-id="'+E(x.candidate_id)+'">✓ '+E(w.confirmIncoming)+'</button>';
+   else if(ready)buttons+='<button class="btn small primary live-transfer-confirm" data-id="'+E(x.candidate_id)+'">✓ '+E(w.confirmIncoming)+'</button>';
+   else if(watching)buttons+='<span class="pill gold">'+E(w.waiting)+' · '+E(D(x.eligible_at))+'</span>';
  }
- return '<div class="live-row live-transfer-row"><div><b>'+E(x.player_name||'–')+'</b><div class="live-transfer-route">'+allianceBadge2(x.from_alliance||'POOL')+'<span>→</span>'+allianceBadge2(x.to_alliance||'POOL')+'<small>'+E(D(x.detected_since))+'</small></div>'+(buttons?'<div class="hero-actions" style="margin-top:7px">'+buttons+'</div>':'')+'</div><span class="pill '+(ownTarget?'green':'blue')+'">'+E(ownTarget?'Eingang':'Ausgang')+'</span></div>';
+ return '<div class="live-row live-transfer-row"><div><b>'+E(x.player_name||'–')+'</b><div class="live-transfer-route">'+allianceBadge2(x.from_alliance||'POOL')+'<span>→</span>'+allianceBadge2(x.to_alliance||'POOL')+'<small>'+E(D(x.detected_since))+'</small></div>'+(buttons?'<div class="hero-actions" style="margin-top:7px">'+buttons+'</div>':'')+'</div><span class="pill '+(ownTarget?'green':'blue')+'">'+E(ownTarget?w.incoming:w.outgoing)+'</span></div>';
 }
 async function confirmTransfer2(id){
  if(!confirm(actionWord2('confirmTransfer')))return;
