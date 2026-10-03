@@ -309,7 +309,9 @@ async function syncCrownVisibility2(){
    S.crown=d;
    // Backend is the authority for Crown access. Avoid a second frontend
    // alliance-code comparison that can incorrectly hide an authorized Crown login.
-   permitted=d?.has_access===true;
+   // TEST ONLY (develop/GitHub Pages): expose the Crown tab to every alliance login.
+   // The backend still controls sensitive Crown data/actions via has_access.
+   permitted=true;
   }
  }catch(err){console.warn('Crown access',err)}
  crownAllowed2=permitted;
