@@ -1836,7 +1836,7 @@ function transferRow2(x){
  const ownSource=x.from_alliance===S.a,ownTarget=x.to_alliance===S.a,watching=x.status==='watching',ready=x.status==='ready';
  const inbound=ownTarget&&!ownSource;
  const inboundExternal=inbound&&(!x.from_alliance||!isNapAlliance2(x.from_alliance));
- let buttons='';
+ let buttons='',note='';
  if((ownSource||inbound)&&(watching||ready)){
    buttons+='<button class="btn small secondary live-transfer-temp" data-id="'+E(x.candidate_id)+'" data-reject="'+(inbound?'1':'0')+'">↩ '+E(inbound?t('rejectTemp'):t('tempTransfer'))+'</button>';
  }
@@ -1844,11 +1844,10 @@ function transferRow2(x){
    if(watching)buttons+='<button class="btn small primary live-transfer-confirm" data-id="'+E(x.candidate_id)+'">✓ '+E(w.confirmNow)+'</button>';
    else if(ready)buttons+='<button class="btn small primary live-transfer-confirm" data-id="'+E(x.candidate_id)+'">✓ '+E(w.confirmMove)+'</button>';
  }else if(inboundExternal){
-   if(x.from_alliance&&(watching||ready))buttons+='<button class="btn small primary live-transfer-confirm" data-id="'+E(x.candidate_id)+'">✓ '+E(w.confirmIncoming)+'</button>';
-   else if(ready)buttons+='<button class="btn small primary live-transfer-confirm" data-id="'+E(x.candidate_id)+'">✓ '+E(w.confirmIncoming)+'</button>';
-   else if(watching)buttons+='<span class="pill gold">'+E(w.waiting)+' · '+E(D(x.eligible_at))+'</span>';
+   buttons+='<button class="btn small primary live-transfer-confirm" data-id="'+E(x.candidate_id)+'">✓ '+E(w.confirmIncoming)+'</button>';
+   if(watching)note='<span class="pill gold">'+E(w.waiting)+' · '+E(D(x.eligible_at))+'</span>';
  }
- return '<div class="live-row live-transfer-row"><div><b>'+E(x.player_name||'–')+'</b><div class="live-transfer-route">'+allianceBadge2(x.from_alliance||'POOL')+'<span>→</span>'+allianceBadge2(x.to_alliance||'POOL')+'<small>'+E(D(x.detected_since))+'</small></div>'+(buttons?'<div class="hero-actions" style="margin-top:7px">'+buttons+'</div>':'')+'</div><span class="pill '+(ownTarget?'green':'blue')+'">'+E(ownTarget?w.incoming:w.outgoing)+'</span></div>';
+ return '<div class="live-row live-transfer-row"><div><b>'+E(x.player_name||'–')+'</b><div class="live-transfer-route">'+allianceBadge2(x.from_alliance||'POOL')+'<span>→</span>'+allianceBadge2(x.to_alliance||'POOL')+'<small>'+E(D(x.detected_since))+'</small></div>'+(buttons?'<div class="hero-actions" style="margin-top:7px">'+buttons+'</div>':'')+(note?'<div class="hero-actions" style="margin-top:6px">'+note+'</div>':'')+'</div><span class="pill '+(ownTarget?'green':'blue')+'">'+E(ownTarget?w.incoming:w.outgoing)+'</span></div>';
 }
 async function confirmTransfer2(id){
  if(!confirm(actionWord2('confirmTransfer')))return;
