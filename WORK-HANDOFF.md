@@ -77,3 +77,27 @@ The unfinished OCR / Performance / AM work is preserved on `feature/ocr-performa
 - `feature/ocr-performance-v16`: unfinished OCR/performance work intentionally preserved and not part of the production baseline.
 
 Do not remove preserved feature work or shared Supabase runtime components merely as repository cleanup. Review runtime dependencies separately.
+
+
+## Test-only Law 15 experiment — 2026-10-03
+
+The `develop` / GitHub Pages test build contains a Law 15 enforcement prototype. Production `main` is unchanged.
+
+Draft tested in the UI:
+`Law #15 – Event Rotation & Resource-Saving Enforcement`
+
+- Non-NAP players remain in the tracked kingdom roster.
+- Crown shows tracked Non-NAP players requiring a Law 15 action.
+- Stage 1: King alliance records **Warned**; the warning stays on record.
+- Stage 2: any later qualifying violation can be set to **7 days Unprotected**.
+- Active Law 15 Unprotected players are visible NAP-wide on HOME with an automatic countdown.
+- Optional King comments are stored with the action.
+- The initial player/R5 message is intentionally treated as a draft and can be refined before production promotion.
+
+Backend isolation:
+- `public.law15_actions_test`
+- `get_law15_dashboard_test()`
+- `apply_law15_action_test(...)`
+- `get_law15_public_unprotected_test()`
+
+These objects exist in the shared Supabase project but are test-specific and are not referenced by production `main`. Do not promote or rename them until the workflow and wording are approved.
