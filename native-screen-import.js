@@ -456,22 +456,35 @@ async function readMobilizationRanks(frame,geometry,worker){
   }
  }
 
- const offsets=new Map();
- for(const [i,rank] of direct){
-  const off=rank-i;
-  offsets.set(off,(offsets.get(off)||0)+1);
- }
- const bestOffset=[...offsets.entries()].sort((a,b)=>b[1]-a[1])[0]||null;
  const byIndex=new Map(direct);
- // One trustworthy anchor defines all visible row ranks in the dense 1–50 list.
- if(bestOffset&&bestOffset[1]>=1){
-  const off=bestOffset[0];
-  if(off>=1&&off<=100){
-   geometry.centers.forEach((_,i)=>{
-    const rank=off+i;
-    if(rank>=1&&rank<=100)byIndex.set(i,rank);
-   });
-  }
+
+ // Propagate ranks using physical row distance, not array indexes. If score OCR
+ // misses a row, the next detected center is ~2 row-heights away and therefore
+ // correctly advances the rank by 2 instead of compressing the ranking.
+ if(direct.size&&Number.isFinite(geometry.period)&&geometry.period>0){
+  const anchors=[...direct.entries()].map(([i,rank])=>({
+   i,rank,center:Number(geometry.centers[i])
+  })).filter(a=>Number.isFinite(a.center));
+
+  geometry.centers.forEach((center,i)=>{
+   if(byIndex.has(i))return;
+   const votes=[];
+   for(const a of anchors){
+    const rawDelta=(Number(center)-a.center)/geometry.period;
+    const rowDelta=Math.round(rawDelta);
+    const residual=Math.abs(rawDelta-rowDelta);
+    if(residual>.28)continue;
+    const rank=a.rank+rowDelta;
+    if(rank>=1&&rank<=100)votes.push(rank);
+   }
+   if(!votes.length)return;
+   const counts=new Map();
+   for(const rank of votes)counts.set(rank,(counts.get(rank)||0)+1);
+   const chosen=[...counts.entries()].sort((a,b)=>b[1]-a[1])[0];
+   // With several anchors require agreement; with one anchor the geometry
+   // itself is the safeguard through the residual check above.
+   if(chosen&&(anchors.length===1||chosen[1]>=2))byIndex.set(i,chosen[0]);
+  });
  }
  try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'6',tessedit_char_whitelist:''})}catch{}
  return {byIndex,allRanks:[...new Set(byIndex.values())].sort((a,b)=>a-b)};
@@ -1069,39 +1082,27 @@ function normalizeMobilizationRanks(hits){
   byRank.set(rank,keep);
  }
 
- // Repair only mathematically unambiguous gaps. AM is sorted by score. If two
- // trusted rank anchors enclose exactly the same number of unranked players as
- // the numeric rank gap, those missing ranks can be restored safely.
- const ordered=[...out]
-  .filter(h=>Number.isFinite(Number(h.score)))
+
+ // Final sanity check: as scores decrease, ranks must strictly increase.
+ // If OCR produces an impossible backward jump, clear the weaker rank instead
+ // of showing a confidently wrong value.
+ const rankedByScore=[...out]
+  .filter(h=>Number.isFinite(Number(h.score))&&Number.isInteger(Number(h.rank)))
   .sort((a,b)=>Number(b.score)-Number(a.score));
- const anchors=[];
- for(let i=0;i<ordered.length;i++){
-  const rank=Number(ordered[i].rank);
-  if(Number.isInteger(rank)&&rank>=1&&rank<=999)anchors.push({i,rank});
- }
- for(let a=0;a<anchors.length-1;a++){
-  const left=anchors[a],right=anchors[a+1];
-  if(right.rank<=left.rank)continue;
-  const between=ordered.slice(left.i+1,right.i);
-  const needed=right.rank-left.rank-1;
-  if(!between.length||between.length!==needed)continue;
-  if(between.some(h=>Number.isInteger(Number(h.rank))))continue;
-
-  // Do not infer across equal-score ties because their internal order can be
-  // ambiguous even though the surrounding ranks are known.
-  const segment=ordered.slice(left.i,right.i+1);
-  let tied=false;
-  for(let j=1;j<segment.length;j++){
-   if(Number(segment[j-1].score)===Number(segment[j].score)){tied=true;break}
+ let lastRank=0,lastHit=null;
+ for(const h of rankedByScore){
+  const rank=Number(h.rank);
+  if(rank>lastRank){lastRank=rank;lastHit=h;continue}
+  const curStrength=strength(h),prevStrength=lastHit?strength(lastHit):Infinity;
+  if(lastHit&&curStrength>prevStrength){
+   lastHit.rank=null;
+   lastHit.rankConflictCleared=true;
+   lastRank=rank;
+   lastHit=h;
+  }else{
+   h.rank=null;
+   h.rankConflictCleared=true;
   }
-  if(tied)continue;
-
-  between.forEach((h,j)=>{
-   h.rank=left.rank+j+1;
-   h.rankInferred=true;
-   h.rankGapRepaired=true;
-  });
  }
 
  return out;
