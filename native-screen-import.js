@@ -1604,7 +1604,7 @@ async function analyze(){
   if(isMobilization){
    const reviewFrames=[];
    const reviewEnd=Math.max(.08,dur-.10);
-   const reviewStep=.35;
+   const reviewStep=.45;
    const reviewTimes=[];
    for(let t=.08;t<reviewEnd;t+=reviewStep)reviewTimes.push(t);
    reviewTimes.push(reviewEnd);
@@ -1621,7 +1621,8 @@ async function analyze(){
     }catch(err){
      console.warn('Skipping AM review frame',sec,err);
     }
-    if(fi%8===0)await new Promise(resolve=>setTimeout(resolve,0));
+    progress(2,97+2.5*((fi+1)/reviewTimes.length),r.hits.length,'review-frames');
+    if(fi%6===0)await new Promise(resolve=>setTimeout(resolve,0));
    }
    if(reviewFrames.length)r.frames=reviewFrames;
   }
