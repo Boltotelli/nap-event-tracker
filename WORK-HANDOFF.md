@@ -41,7 +41,7 @@ That branch includes newer OCR/video compatibility work and must become `develop
 - ScreenImporter evidence/update logic must reuse existing violations/cases and avoid duplicates.
 - Times shown in the app should use UTC.
 - Support is privacy-scoped; alliance users must not gain access to another alliance's private case details.
-- Law 15 (Event Rotation Enforcement): non-NAP players interfering with a ranking position designated for a NAP nominee may be declared unprotected for a duration determined by NAP leadership; otherwise non-NAP event participation remains allowed.
+- Law 14 is now **Event Spending** with sections 14.1–14.4. 14.1 keeps the >3× non-KvK spending rule and exceptions; 14.2 keeps the progressive stage 1–4 penalties; 14.3 covers Non-NAP players (first violation: warning to player + R5; further violation: 7 days without Law #5 protection, enforced by the current king's alliance); 14.4 incorporates the Strongest Governor nomination rotation. Laws 14A and 15 are retired/inactive.
 - Transfer workflow: POOL/non-NAP → NAP transfers may be accepted immediately by the destination NAP alliance because the source has no app access. The 72-hour observation window remains visible as safety context but no longer blocks manual acceptance. Reject/temporary remains available. Normal NAP → NAP transfers keep the existing source/destination authorization workflow. Transfer UI labels follow the selected DE/EN/FR/ES language.
 
 ## Infrastructure boundary
