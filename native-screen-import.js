@@ -958,6 +958,54 @@ function applyMobilizationPodiumRanks(hits,podiumRankByScore){
   return rank?{...h,rank,podiumRank:true}:h;
  });
 }
+function normalizeMobilizationRanks(hits){
+ if(!Array.isArray(hits)||!hits.length)return hits||[];
+
+ const out=hits.map(h=>({...h}));
+
+ // AM is score-sorted. If the top three recognized players are present, they
+ // are the podium. This also repairs cases where normal-row OCR accidentally
+ // assigns rank 2 to several later players.
+ const top=[...out]
+  .filter(h=>Number.isFinite(Number(h.score)))
+  .sort((a,b)=>Number(b.score)-Number(a.score))
+  .slice(0,3);
+ const podiumIds=new Set(top.map(h=>String(h.player?.player_game_id||h.player?.player_id||h.name||'')));
+ for(const h of out){
+  const id=String(h.player?.player_game_id||h.player?.player_id||h.name||'');
+  if(Number(h.rank)>=1&&Number(h.rank)<=3&&!podiumIds.has(id)){
+   h.rank=null;
+   h.rankConflictCleared=true;
+  }
+ }
+ top.forEach((h,i)=>{
+  h.rank=i+1;
+  h.podiumRank=true;
+  h.rankInferred=true;
+ });
+
+ // Every remaining AM rank must be globally unique. Keep the strongest
+ // supported assignment and clear weaker duplicates rather than displaying
+ // impossible duplicate ranks.
+ const byRank=new Map();
+ const strength=h=>
+   (h.podiumRank?10000:0)+
+   Math.max(0,Number(h.consensus)||0)*100+
+   Math.max(0,Number(h.observations)||0)*10+
+   Math.max(0,Number(h.player?.confidence)||0);
+ for(const h of out){
+  const rank=Number(h.rank);
+  if(!Number.isInteger(rank)||rank<1||rank>999)continue;
+  if(!byRank.has(rank)){byRank.set(rank,h);continue}
+  const incumbent=byRank.get(rank);
+  const keep=strength(h)>strength(incumbent)?h:incumbent;
+  const drop=keep===h?incumbent:h;
+  drop.rank=null;
+  drop.rankConflictCleared=true;
+  byRank.set(rank,keep);
+ }
+ return out;
+}
 function consensusHit(list){
  if(!list?.length)return null;
  const scores=new Map();
@@ -1336,7 +1384,7 @@ async function analyze(){
   coverage=rankCoverage(rankMap);
   r.coverage=coverage;
   r.hits=[...observations.values()].map(consensusHit).filter(Boolean);
-  if(isMobilization)r.hits=applyMobilizationPodiumRanks(r.hits,podiumRankByScore);
+  if(isMobilization){r.hits=applyMobilizationPodiumRanks(r.hits,podiumRankByScore);r.hits=normalizeMobilizationRanks(r.hits);}
   r.hits.sort((a,b)=>(a.rank&&b.rank?a.rank-b.rank:b.score-a.score));
   let matchedRanks=new Set(r.hits.map(h=>h.rank).filter(Boolean));
 
@@ -1417,7 +1465,7 @@ async function analyze(){
    try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'6',tessedit_char_whitelist:''})}catch{}
    // Rebuild candidate groups after the dedicated row OCR.
    r.hits=[...observations.values()].map(consensusHit).filter(Boolean);
-   if(isMobilization)r.hits=applyMobilizationPodiumRanks(r.hits,podiumRankByScore);
+   if(isMobilization){r.hits=applyMobilizationPodiumRanks(r.hits,podiumRankByScore);r.hits=normalizeMobilizationRanks(r.hits);}
    r.hits.sort((a,b)=>(a.rank&&b.rank?a.rank-b.rank:b.score-a.score));
    matchedRanks=new Set(r.hits.map(h=>h.rank).filter(Boolean));
    const refreshedRaw=[...unmatched.values()].filter(u=>!matchedRanks.has(u.rank)&&!r.hits.some(h=>u.score===h.score&&similarity(u.name,h.player?.player_name||'')>=.62));
@@ -1432,7 +1480,7 @@ async function analyze(){
    if(hit.rank)matchedRanks.add(hit.rank);
   }
   if(rescued.length)r.hits=r.hits.concat(rescued);
-  if(isMobilization)r.hits=applyMobilizationPodiumRanks(r.hits,podiumRankByScore);
+  if(isMobilization){r.hits=applyMobilizationPodiumRanks(r.hits,podiumRankByScore);r.hits=normalizeMobilizationRanks(r.hits);}
   r.hits.sort((a,b)=>(a.rank&&b.rank?a.rank-b.rank:b.score-a.score));
   matchedRanks=new Set(r.hits.map(h=>h.rank).filter(Boolean));
   r.missingMatchedRanks=isMobilization?(r.coverage?.seen||[]).filter(rank=>!matchedRanks.has(rank)):[];
@@ -1529,7 +1577,7 @@ function showReview(r){
   const checked=r.selection?.has(key)?r.selection.get(key):allowed;
   const tone=r.kind==='perf'?'performance':label==='violation'?'new':label==='update'?'update':label==='already_recorded'?'already':'other';
   return '<article class="nocr-hit nocr-hit--'+tone+'"><label class="nocr-hit-check"><input type="checkbox" data-hit="'+i+'" '+(checked?'checked':'')+' '+(needsEvidence?'disabled':'')+'>'+
-   '<span><strong>'+esc(h.player.player_name)+'</strong><small>'+esc(isTrackingHit(h)?ocr2('unaffiliated'):(h.alliance||h.player.alliance_code||''))+' · '+esc(h.player.player_game_id||'')+(h.rank?' · '+esc(tr('rank'))+' '+esc(h.rank):'')+(h.observations>1?' · '+esc(h.consensus)+'/'+esc(h.observations):'')+(h.manual?' · '+esc(reviewText('manual')):'')+'</small></span></label>'+
+   '<span><strong>'+esc(h.player.player_name)+'</strong><small>'+esc(isTrackingHit(h)?ocr2('unaffiliated'):(h.alliance||h.player.alliance_code||''))+' · '+esc(h.player.player_game_id||'')+(h.rank?' · '+esc(tr('rank'))+' '+esc(h.rank):'')+(h.observations>1&&!(r.kind==='perf'&&$('#nocrType',root).value==='alliance_mobilization')?' · '+esc(h.consensus)+'/'+esc(h.observations):'')+(h.manual?' · '+esc(reviewText('manual')):'')+'</small></span></label>'+
    '<input type="text" inputmode="numeric" autocomplete="off" data-score="'+i+'" value="'+esc(points(h.score))+'" aria-label="'+esc(tr('score'))+'">'+
    (r.kind==='perf'&&$('#nocrType',root).value==='kvk_prep'?'<input type="number" min="1" max="200" step="1" data-rank="'+i+'" value="'+esc(h.rank||'')+'" aria-label="'+esc(tr('rank'))+'">':'')+
    reviewStatus(h,r,st)+(needsEvidence?'<div class="nocr-status error">'+esc(tr('evidenceRequired'))+'</div>':'')+
