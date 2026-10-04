@@ -1058,21 +1058,20 @@ function normalizeMobilizationRanks(hits){
  if(!Array.isArray(hits)||!hits.length)return hits||[];
  const out=hits.map(h=>({...h}));
 
- // Podium is the only inferred AM rank: the ranking screen is score-sorted and
- // the top three recognized entries are the visible podium cards.
- const top=[...out]
-  .filter(h=>Number.isFinite(Number(h.score)))
-  .sort((a,b)=>Number(b.score)-Number(a.score))
-  .slice(0,3);
- const podiumIds=new Set(top.map(h=>String(h.player?.player_game_id||h.player?.player_id||h.name||'')));
+ // V31: never infer podium ranks from the three highest *recognized* scores.
+ // If rank 1 is missing from OCR/roster matching, ranks 2–3 must not shift up.
+ // Podium ranks are accepted only when applyMobilizationPodiumRanks() marked
+ // them from the dedicated podium OCR.
  for(const h of out){
-  const id=String(h.player?.player_game_id||h.player?.player_id||h.name||'');
-  if(Number(h.rank)>=1&&Number(h.rank)<=3&&!podiumIds.has(id))h.rank=null;
+  const rank=Number(h.rank);
+  if(rank>=1&&rank<=3&&!h.podiumRank){
+   h.rank=null;
+   h.rankConflictCleared=true;
+  }
  }
- top.forEach((h,i)=>{h.rank=i+1;h.podiumRank=true;h.rankInferred=true});
 
- // Direct OCR ranks must be globally unique. Conflicts are cleared rather than
- // guessed.
+ // Direct/podium ranks must be globally unique. Conflicts are cleared rather
+ // than guessed.
  const byRank=new Map();
  const strength=h=>
    (h.podiumRank?10000:0)+Math.max(0,Number(h.consensus)||0)*100+
@@ -1084,10 +1083,12 @@ function normalizeMobilizationRanks(hits){
   const incumbent=byRank.get(rank);
   const keep=strength(h)>strength(incumbent)?h:incumbent;
   const drop=keep===h?incumbent:h;
-  drop.rank=null;drop.rankConflictCleared=true;byRank.set(rank,keep);
+  drop.rank=null;
+  drop.rankConflictCleared=true;
+  byRank.set(rank,keep);
  }
 
- // Score order is only used as a rejection rule, never to invent a rank.
+ // Score order is only a rejection rule. It never invents or shifts ranks.
  const ordered=[...out]
   .filter(h=>Number.isFinite(Number(h.score))&&Number.isInteger(Number(h.rank)))
   .sort((a,b)=>Number(b.score)-Number(a.score));
@@ -1095,7 +1096,10 @@ function normalizeMobilizationRanks(hits){
  for(const h of ordered){
   const rank=Number(h.rank);
   if(rank>maxRank){maxRank=rank;continue}
-  if(!h.podiumRank){h.rank=null;h.rankConflictCleared=true}
+  if(!h.podiumRank){
+   h.rank=null;
+   h.rankConflictCleared=true;
+  }
  }
  return out;
 }
