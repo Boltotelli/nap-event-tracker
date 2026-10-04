@@ -509,16 +509,13 @@ function parseMobilizationNameText(text){
  if(/^(rang|rank|gouverneur|governor|pers[oö]nliche|personal|punkte|points|score)$/i.test(parsed.name))return null;
  return parsed;
 }
-async function readMobilizationSlots(frame,worker,skipRanks=null){
+async function readMobilizationSlots(frame,worker){
  const rows=[],geometry=mobilizationRowGeometry(frame);
  const rankInfo=await readMobilizationRanks(frame,geometry,worker);
  for(let rowIndex=0;rowIndex<geometry.centers.length;rowIndex++){
   const center=geometry.centers[rowIndex];
   const slot=mobilizationCropsForCenter(frame,center,geometry.period);
   const rank=rankInfo.byIndex.get(rowIndex)||null;
-  // Overlapping AM frames intentionally repeat rows. Once a rank has already
-  // been matched to a player, do not OCR that same row again.
-  if(rank&&skipRanks?.has(rank))continue;
   try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'7',tessedit_char_whitelist:'0123456789.,'})}catch{}
   let scoreText=(await worker.recognize(slot.score)).data?.text||'',score=parseMobilizationScoreText(scoreText);
   if(!Number.isSafeInteger(score)){
@@ -989,13 +986,12 @@ function baseFrameTimes(dur){
 }
 function performanceFrameTimes(dur){
  const end=Math.max(.08,dur-.10),times=[];
- const add=t=>{const v=Math.max(.05,Math.min(end,t));if(!times.some(x=>Math.abs(x-v)<.10))times.push(v)};
- // V20: the supplied AM recording shows complete 1–54 coverage at roughly
- // 1.5-second intervals. Use deterministic full-video coverage instead of
- // guessing where the scroll accelerates.
+ const add=t=>{const v=Math.max(.05,Math.min(end,t));if(!times.some(x=>Math.abs(x-v)<.08))times.push(v)};
+ // V21 stability pass: prioritize complete coverage and consensus.
+ // Roughly 1.1 s cadence keeps adjacent AM rows overlapping across frames.
  add(.10);
- const step=1.45;
- for(let t=.55;t<end;t+=step)add(t);
+ const step=1.10;
+ for(let t=.45;t<end;t+=step)add(t);
  add(end);
  return times.sort((a,b)=>a-b);
 }
@@ -1244,7 +1240,7 @@ async function analyze(){
   r.members=members;r.fileHash=await sha256(file);worker=await ensureWorker();
   video=document.createElement('video');url=await metadata(video,file);if(r!==run)return;
   const dur=video.duration;progress(1,5,0);
-  const times=isMobilization?performanceFrameTimes(dur):baseFrameTimes(dur),observations=new Map(),unmatched=new Map(),rankMap=new Map(),podiumRankByScore=new Map(),matchedMobilizationRanks=new Set();r.frames=[];
+  const times=isMobilization?performanceFrameTimes(dur):baseFrameTimes(dur),observations=new Map(),unmatched=new Map(),rankMap=new Map(),podiumRankByScore=new Map();r.frames=[];
   const processRows=(rows,sec,full)=>{
    let still=null;
    for(const row of rows){
@@ -1262,7 +1258,6 @@ async function analyze(){
      continue;
     }
     if(r.kind==='perf'&&$('#nocrType',root).value==='kvk_prep'&&!(row.rank>=1&&row.rank<=200))row.rank=null;
-    if(isMobilization&&row.rank)matchedMobilizationRanks.add(row.rank);
     const key=String(p.player_game_id||p.player_id);if(!observations.has(key))observations.set(key,[]);
     if(!still)still=full.toDataURL('image/jpeg',.76);
     observations.get(key).push({row:{...row},player:p,time:sec,image:still});
@@ -1291,7 +1286,7 @@ async function analyze(){
      const podiumScores=await readMobilizationPodiumScores(full,worker);
      for(const item of podiumScores){podiumRankByScore.set(item.score,item.rank);recordRank(item.rank,sec,rankMap)}
     }
-    parsed=await readMobilizationSlots(full,worker,matchedMobilizationRanks);
+    parsed=await readMobilizationSlots(full,worker);
     for(const rank of parsed.allRanks||[])recordRank(rank,sec,rankMap);
    }else{
     const ocr=(await worker.recognize(roi,{}, {text:true,blocks:true})).data||{};
