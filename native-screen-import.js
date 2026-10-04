@@ -860,6 +860,45 @@ function bestMemberForVariant(row,members){
  if((!list[0]||list[0].s<.78)&&row.alliance)list=rankedPlayerCandidates(row,members);
  return {best:list[0]||null,second:list[1]||null};
 }
+function sanitizeMobilizationUnmatched(rows,hits=[]){
+ const groups=new Map();
+ for(const row of rows||[]){
+  const key=norm(row.name)+'|'+String(row.score);
+  if(!groups.has(key))groups.set(key,[]);
+  groups.get(key).push(row);
+ }
+ const known=[...(hits||[])]
+  .filter(h=>Number.isFinite(Number(h.score))&&Number.isInteger(Number(h.rank)))
+  .map(h=>({score:Number(h.score),rank:Number(h.rank)}));
+
+ const out=[];
+ for(const variants of groups.values()){
+  const base=[...variants].sort((a,b)=>(Number(b._seen)||1)-(Number(a._seen)||1))[0];
+  const ranks=[...new Set(variants.map(v=>Number(v.rank)).filter(r=>Number.isInteger(r)&&r>=1&&r<=100))];
+
+  let rank=ranks.length===1?ranks[0]:null;
+
+  // Reject a rank that contradicts already trusted score/rank ordering.
+  if(rank!=null){
+   const score=Number(base.score);
+   const impossible=known.some(k=>
+    (score>k.score&&rank>=k.rank)||
+    (score<k.score&&rank<=k.rank)
+   );
+   if(impossible)rank=null;
+  }
+
+  out.push({
+   ...base,
+   rank,
+   _seen:variants.reduce((n,v)=>n+Math.max(1,Number(v._seen)||1),0),
+   rankConflict:ranks.length>1,
+   rankVariants:ranks
+  });
+ }
+ return out;
+}
+
 function groupUnmatchedRows(rows,matchedRanks=new Set()){
  const byRank=new Map(),loose=[];
  for(const row of rows||[]){
@@ -1525,12 +1564,13 @@ async function analyze(){
    }
   }
 
-  const rawUnmatched=[...unmatched.values()].filter(u=>!matchedRanks.has(u.rank)&&!r.hits.some(h=>
+  let rawUnmatched=[...unmatched.values()].filter(u=>!matchedRanks.has(u.rank)&&!r.hits.some(h=>
    u.score===h.score&&(
     similarity(u.name,h.player?.player_name||'')>=.62||
     (isMobilization&&podiumRankByScore.has(Number(u.score)))
    )
   ));
+  if(isMobilization)rawUnmatched=sanitizeMobilizationUnmatched(rawUnmatched,r.hits);
   let groupedUnmatched=groupUnmatchedRows(rawUnmatched,matchedRanks);
   r.looseUnmatched=groupedUnmatched.loose||[];
 
@@ -1569,7 +1609,8 @@ async function analyze(){
    if(isMobilization){r.hits=applyMobilizationPodiumRanks(r.hits,podiumRankByScore);r.hits=normalizeMobilizationRanks(r.hits);}
    r.hits.sort((a,b)=>(a.rank&&b.rank?a.rank-b.rank:b.score-a.score));
    matchedRanks=new Set(r.hits.map(h=>h.rank).filter(Boolean));
-   const refreshedRaw=[...unmatched.values()].filter(u=>!matchedRanks.has(u.rank)&&!r.hits.some(h=>u.score===h.score&&similarity(u.name,h.player?.player_name||'')>=.62));
+   let refreshedRaw=[...unmatched.values()].filter(u=>!matchedRanks.has(u.rank)&&!r.hits.some(h=>u.score===h.score&&similarity(u.name,h.player?.player_name||'')>=.62));
+   if(isMobilization)refreshedRaw=sanitizeMobilizationUnmatched(refreshedRaw,r.hits);
    groupedUnmatched=groupUnmatchedRows(refreshedRaw,matchedRanks);
    r.looseUnmatched=groupedUnmatched.loose||[];
   }
