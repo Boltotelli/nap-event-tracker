@@ -532,7 +532,7 @@ function addLiveCss(){
  '.live-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:13px}.live-stat{padding:12px;border:1px solid var(--line);border-radius:13px;background:var(--panel);min-width:0}.live-stat b{font-size:20px;display:block;max-width:100%;font-variant-numeric:tabular-nums;line-height:1.12;white-space:nowrap}.live-stat small{color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.06em}.performance-panel-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.performance-kpi-grid{display:grid;grid-template-columns:104px minmax(0,1fr) minmax(0,1fr) 96px;gap:10px;margin-bottom:13px}.performance-kpi{min-width:0;min-height:88px;padding:14px 16px;border:1px solid var(--line);border-radius:13px;background:var(--panel);display:flex;flex-direction:column;justify-content:center}.performance-kpi b{font-size:21px;line-height:1.05;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:clip}.performance-kpi small{margin-top:8px;color:var(--muted);font-size:7.5px;line-height:1.15;text-transform:uppercase;letter-spacing:.045em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.performance-kpi.compact{padding:14px 10px;text-align:center;align-items:center}.performance-kpi.compact b{font-size:21px}.performance-kpi.compact small{text-align:center;max-width:100%}.performance-kpi.score{background:color-mix(in srgb,var(--panel) 88%,var(--panel-2));padding-left:17px;padding-right:17px}'+
  '.live-violation-card-head{align-items:flex-start}.live-violation-badges{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}.live-violation-card-actions{display:flex;justify-content:flex-end;gap:8px;padding:10px 18px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--panel-2) 45%,transparent)}.live-violation-card-actions .btn{min-width:108px}@media(max-width:700px){.live-violation-card-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:14px 14px 12px}.live-violation-badges{justify-content:flex-end}.live-violation-badges .pill{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.live-violation-card-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;padding:10px 14px 12px}.live-violation-card-actions .btn{width:100%;min-width:0;height:40px;padding:0 10px;white-space:nowrap}.live-violation-card-actions .live-violation-message{grid-column:1/-1}}'+
  '.live-list{display:grid;gap:7px}.live-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:11px;background:var(--panel-2)}.live-row small{display:block;color:var(--muted);font-size:8px;margin-top:3px}.player-timer-strip{margin-top:10px;padding:8px 10px;border:1px solid color-mix(in srgb,var(--red) 28%,var(--line));border-radius:10px;background:color-mix(in srgb,var(--red) 7%,var(--panel-2));display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:9px}.player-timer-strip b{margin-left:auto;font-variant-numeric:tabular-nums}.player-timer-strip small{width:100%;color:var(--muted);font-size:8px}.home-timer-right{text-align:right;display:grid;gap:4px;justify-items:end}.home-timer-right strong{font-variant-numeric:tabular-nums}'+
- '.law-body-copy{white-space:pre-line;line-height:1.65;color:var(--text);font-size:11px;margin:12px 0 0}.law-card-14 .law-card-detail{padding-top:12px}.law14-sections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.law14-section{border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--panel-2) 78%,var(--panel));overflow:hidden}.law14-section-head{display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--gold) 7%,var(--panel-2))}.law14-section-head span{display:inline-grid;place-items:center;min-width:42px;height:27px;padding:0 8px;border-radius:9px;background:color-mix(in srgb,var(--gold) 16%,var(--panel));color:var(--gold-text,var(--gold-2));font-size:10px;font-weight:1000}.law14-section-head strong{font-size:11px;line-height:1.2}.law14-copy{padding:12px;color:var(--muted);font-size:10px;line-height:1.62}.law14-copy p{margin:0 0 9px}.law14-copy p:last-child{margin-bottom:0}.law14-penalties{display:grid;gap:6px;margin-top:3px}.law14-penalty{display:grid;grid-template-columns:25px minmax(0,1fr);gap:8px;align-items:start}.law14-penalty span{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;background:var(--panel-3);border:1px solid var(--line);color:var(--text);font-size:9px;font-weight:950}.law14-penalty b{font-size:9.5px;line-height:1.45;color:var(--text);font-weight:750;padding-top:4px}@media(max-width:760px){.law14-sections{grid-template-columns:1fr}.law14-section-head{padding:10px}.law14-copy{padding:11px;font-size:9.5px}}'+
+ '.law-body-copy{white-space:pre-line;line-height:1.65;color:var(--text);font-size:11px;margin:12px 0 0}.law-card-14 .law-card-detail{padding-top:12px}.law14-sections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px;align-items:start}.law14-section{border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--panel-2) 78%,var(--panel));overflow:hidden;align-self:start}.law14-section-head{display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--gold) 7%,var(--panel-2))}.law14-section-head span{display:inline-grid;place-items:center;min-width:42px;height:27px;padding:0 8px;border-radius:9px;background:color-mix(in srgb,var(--gold) 16%,var(--panel));color:var(--gold-text,var(--gold-2));font-size:10px;font-weight:1000}.law14-section-head strong{font-size:11px;line-height:1.2}.law14-copy{padding:12px;color:var(--muted);font-size:10px;line-height:1.62}.law14-copy p{margin:0 0 9px}.law14-copy p:last-child{margin-bottom:0}.law14-penalties{display:grid;gap:6px;margin-top:3px}.law14-penalty{display:grid;grid-template-columns:25px minmax(0,1fr);gap:8px;align-items:start}.law14-penalty span{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;background:var(--panel-3);border:1px solid var(--line);color:var(--text);font-size:9px;font-weight:950}.law14-penalty b{font-size:9.5px;line-height:1.45;color:var(--text);font-weight:750;padding-top:4px}@media(max-width:760px){.law14-sections{grid-template-columns:1fr}.law14-section-head{padding:10px}.law14-copy{padding:11px;font-size:9.5px}}'+
  '.live-empty-state{padding:24px;text-align:center;border:1px dashed var(--line);border-radius:13px;color:var(--muted);font-size:10px;background:var(--panel)}'+
  '.live-status{font-size:9px;color:var(--muted);min-height:16px}'+
  '@media(max-width:900px){.live-panel-grid,.performance-panel-grid{grid-template-columns:1fr}.live-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.performance-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.performance-kpi,.performance-kpi.compact{min-height:82px;padding:13px 14px;text-align:left;align-items:flex-start}.performance-kpi small,.performance-kpi.compact small{text-align:left}.live-form-row{grid-template-columns:1fr}.live-import-frame{min-height:580px}}';
@@ -868,6 +868,21 @@ async function renderLawsLive(){
   v.querySelectorAll('[data-live-lawtab]').forEach(b=>b.onclick=()=>{liveLawTab=b.dataset.liveLawtab;paintLaws2()});paintLaws2();
  }catch(err){v.innerHTML+='<div class="live-empty-state">'+E(err.message||String(err))+'</div>'}
 }
+function law14BlockHtml2(block,sectionNo){
+ const inline=sectionNo==='14.2'?block.match(/^([\s\S]*?:)\s*1\.\s*([\s\S]*?)\s+2\.\s*([\s\S]*?)\s+3\.\s*([\s\S]*?)\s+4\.\s*([\s\S]*?)(?=\s+(?:For penalties|Bei den Strafen|Pour les sanctions|Para las sanciones)\b|$)([\s\S]*)$/):null;
+ if(inline){
+   const items=inline.slice(2,6);
+   return '<p>'+E(inline[1])+'</p><div class="law14-penalties">'+items.map((x,i)=>'<div class="law14-penalty"><span>'+(i+1)+'</span><b>'+E(x.trim())+'</b></div>').join('')+'</div>'+(inline[6]?.trim()?'<p class="law14-after-list">'+E(inline[6].trim())+'</p>':'');
+ }
+ const lines=block.split('\n').map(x=>x.trim()).filter(Boolean);
+ if(lines.length>1&&lines.every(x=>/^\d+\.\s+/.test(x))){
+   return '<div class="law14-penalties">'+lines.map(x=>{
+     const mm=x.match(/^(\d+)\.\s+([\s\S]+)$/);
+     return '<div class="law14-penalty"><span>'+E(mm?.[1]||'')+'</span><b>'+E(mm?.[2]||x)+'</b></div>';
+   }).join('')+'</div>';
+ }
+ return '<p>'+E(block).replaceAll('\n','<br>')+'</p>';
+}
 function lawBodyHtml2(l){
  const raw=String(l?.full_text||'').trim();
  if(String(l?.law_key)!=='14')return '<p class="law-body-copy">'+E(raw)+'</p>';
@@ -878,17 +893,8 @@ function lawBodyHtml2(l){
    if(!m)return '<div class="law14-section"><div class="law14-copy">'+E(part)+'</div></div>';
    const number=m[1],title=m[2].trim(),body=m[3].trim();
    const blocks=body.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
-   const content=blocks.map(block=>{
-     const lines=block.split('\n').map(x=>x.trim()).filter(Boolean);
-     if(lines.length>1&&lines.every(x=>/^\d+\.\s+/.test(x))){
-       return '<div class="law14-penalties">'+lines.map(x=>{
-         const mm=x.match(/^(\d+)\.\s+([\s\S]+)$/);
-         return '<div class="law14-penalty"><span>'+E(mm?.[1]||'')+'</span><b>'+E(mm?.[2]||x)+'</b></div>';
-       }).join('')+'</div>';
-     }
-     return '<p>'+E(block).replaceAll('\n','<br>')+'</p>';
-   }).join('');
-   return '<section class="law14-section"><div class="law14-section-head"><span>'+E(number)+'</span><strong>'+E(title)+'</strong></div><div class="law14-copy">'+content+'</div></section>';
+   const content=blocks.map(block=>law14BlockHtml2(block,number)).join('');
+   return '<div class="law14-section"><div class="law14-section-head"><span>'+E(number)+'</span><strong>'+E(title)+'</strong></div><div class="law14-copy">'+content+'</div></div>';
  }).join('')+'</div>';
 }
 function paintLaws2(){
