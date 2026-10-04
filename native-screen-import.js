@@ -421,7 +421,7 @@ function parseMobilizationRankValue(text){
  const s=ocrDigits(String(text||'').trim()).replace(/[^0-9]/g,'');
  if(!s)return null;
  const n=Number(s);
- return Number.isInteger(n)&&n>=1&&n<=50?n:null;
+ return Number.isInteger(n)&&n>=1&&n<=100?n:null;
 }
 async function readMobilizationRanks(frame,geometry,worker){
  const strip=mobilizationRankStrip(frame),direct=new Map();
@@ -466,10 +466,10 @@ async function readMobilizationRanks(frame,geometry,worker){
  // One trustworthy anchor defines all visible row ranks in the dense 1–50 list.
  if(bestOffset&&bestOffset[1]>=1){
   const off=bestOffset[0];
-  if(off>=1&&off<=50){
+  if(off>=1&&off<=100){
    geometry.centers.forEach((_,i)=>{
     const rank=off+i;
-    if(rank>=1&&rank<=50)byIndex.set(i,rank);
+    if(rank>=1&&rank<=100)byIndex.set(i,rank);
    });
   }
  }
@@ -477,6 +477,53 @@ async function readMobilizationRanks(frame,geometry,worker){
  return {byIndex,allRanks:[...new Set(byIndex.values())].sort((a,b)=>a-b)};
 }
 
+function mobilizationScoreStrip(frame){
+ return cropRelative(frame,.685,.34,.955,.765,620);
+}
+function mobilizationScoreRowsFromData(data,strip,frame){
+ const out=[],H=frame.height;
+ for(const line of ocrLinesFromBlocks(data?.blocks||[])){
+  const score=parseMobilizationScoreText(line.text);
+  const y=normalizedLineY(line,strip);
+  if(!Number.isSafeInteger(score)||y==null)continue;
+  const fullY=(.34+y*(.765-.34))*H;
+  if(fullY<H*.355||fullY>H*.75)continue;
+  out.push({score,center:fullY,raw:String(line.text||'').trim()});
+ }
+ out.sort((a,b)=>a.center-b.center);
+ // Tesseract can occasionally split one number into two close lines.
+ const deduped=[];
+ for(const row of out){
+  const near=deduped.find(x=>Math.abs(x.center-row.center)<H*.018);
+  if(!near)deduped.push(row);
+  else if(String(row.raw).length>String(near.raw).length)Object.assign(near,row);
+ }
+ return deduped;
+}
+async function readMobilizationScoreRows(frame,worker){
+ const strip=mobilizationScoreStrip(frame);
+ try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'6',tessedit_char_whitelist:'0123456789.,'})}catch{}
+ let data=(await worker.recognize(strip,{}, {text:true,blocks:true})).data||{};
+ let rows=mobilizationScoreRowsFromData(data,strip,frame);
+ if(rows.length<2){
+  const enhanced=enhancedCanvas(strip);
+  data=(await worker.recognize(enhanced,{}, {text:true,blocks:true})).data||{};
+  const retry=mobilizationScoreRowsFromData(data,enhanced,frame);
+  if(retry.length>rows.length)rows=retry;
+ }
+ return rows;
+}
+function mobilizationGeometryFromScoreRows(frame,rows){
+ const centers=rows.map(r=>r.center).sort((a,b)=>a-b);
+ const diffs=[];
+ for(let i=1;i<centers.length;i++){
+  const d=centers[i]-centers[i-1];
+  if(d>=frame.height*.06&&d<=frame.height*.115)diffs.push(d);
+ }
+ diffs.sort((a,b)=>a-b);
+ const period=diffs.length?diffs[Math.floor(diffs.length/2)]:frame.height*.087;
+ return {period,centers};
+}
 function parseMobilizationScoreText(text){
  const lines=String(text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
  for(const raw of lines){
@@ -510,17 +557,33 @@ function parseMobilizationNameText(text){
  return parsed;
 }
 async function readMobilizationSlots(frame,worker){
- const rows=[],geometry=mobilizationRowGeometry(frame);
+ const rows=[];
+ let scoreRows=await readMobilizationScoreRows(frame,worker);
+ let geometry,scoreByIndex=null;
+
+ if(scoreRows.length>=2){
+  geometry=mobilizationGeometryFromScoreRows(frame,scoreRows);
+  scoreByIndex=new Map(scoreRows.map((r,i)=>[i,r.score]));
+ }else{
+  // Fallback for unusual layouts or a temporarily unreadable score column.
+  geometry=mobilizationRowGeometry(frame);
+ }
+
  const rankInfo=await readMobilizationRanks(frame,geometry,worker);
  for(let rowIndex=0;rowIndex<geometry.centers.length;rowIndex++){
   const center=geometry.centers[rowIndex];
   const slot=mobilizationCropsForCenter(frame,center,geometry.period);
   const rank=rankInfo.byIndex.get(rowIndex)||null;
-  try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'7',tessedit_char_whitelist:'0123456789.,'})}catch{}
-  let scoreText=(await worker.recognize(slot.score)).data?.text||'',score=parseMobilizationScoreText(scoreText);
+
+  let score=scoreByIndex?.get(rowIndex)||null;
   if(!Number.isSafeInteger(score)){
-   scoreText=(await worker.recognize(enhancedCanvas(slot.score))).data?.text||'';
+   try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'7',tessedit_char_whitelist:'0123456789.,'})}catch{}
+   let scoreText=(await worker.recognize(slot.score)).data?.text||'';
    score=parseMobilizationScoreText(scoreText);
+   if(!Number.isSafeInteger(score)){
+    scoreText=(await worker.recognize(enhancedCanvas(slot.score))).data?.text||'';
+    score=parseMobilizationScoreText(scoreText);
+   }
   }
   if(!Number.isSafeInteger(score))continue;
 
@@ -544,7 +607,8 @@ async function readMobilizationSlots(frame,worker){
    parsed=parseMobilizationNameText(nameText);
   }
   if(!parsed)continue;
-  rows.push({...parsed,score,rank,dynamicRowOcr:true,rowCenter:slot.center,raw:(rank?'#'+rank+' ':'')+parsed.raw+' · '+score});
+
+  rows.push({...parsed,score,rank,dynamicRowOcr:true,scoreAnchored:!!scoreByIndex,rowCenter:slot.center,raw:(rank?'#'+rank+' ':'')+parsed.raw+' · '+score});
  }
  rows.allRanks=rankInfo.allRanks;
  try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'6',tessedit_char_whitelist:''})}catch{}
