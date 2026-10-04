@@ -987,14 +987,18 @@ function baseFrameTimes(dur){
 function performanceFrameTimes(dur){
  const end=Math.max(.08,dur-.10),times=[];
  const add=t=>{const v=Math.max(.05,Math.min(end,t));if(!times.some(x=>Math.abs(x-v)<.12))times.push(v)};
- // AM rows stay visible long enough that ~2.5 s spacing still overlaps adjacent
- // viewports. V16 used 28–34 full OCR frames, which made desktop runs very slow.
- [0.12,0.75,1.45].forEach(add);
- const count=Math.min(18,Math.max(12,Math.ceil(dur/2.6)));
- const start=1.45;
- for(let i=1;i<=count;i++)add(start+(end-start)*(i/(count+1)));
+ // V18: keep the faster V17 baseline, but restore enough coverage for the
+ // lower ranks. The last third is sampled more densely because the final rows
+ // move through the viewport faster in typical AM recordings.
+ [0.12,0.70,1.35].forEach(add);
+ const start=1.35;
+ const baseCount=Math.min(18,Math.max(15,Math.ceil(dur/2.15)));
+ for(let i=1;i<=baseCount;i++)add(start+(end-start)*(i/(baseCount+1)));
+ // Dedicated tail samples ensure ranks 40–50 are not skipped even when the
+ // main scroll accelerates near the bottom.
+ [0.78,0.84,0.89,0.93,0.965,0.99].forEach(p=>add(end*p));
  add(end);
- return times.sort((a,b)=>a-b);
+ return times.sort((a,b)=>a-b).slice(0,24);
 }
 function videoErrorMessage(video){
  const code=Number(video?.error?.code||0);
