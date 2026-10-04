@@ -1425,7 +1425,13 @@ async function analyze(){
     progress(1,5+65*((i+1)/times.length),observations.size);
     continue;
    }
-   if(r.frames.length<12&&i%Math.max(1,Math.floor(times.length/12))===0)r.frames.push({time:sec,image:full.toDataURL('image/jpeg',.72)});
+   if(isMobilization){
+    // Keep every sampled AM frame available for manual review. Missing players
+    // often sit between the old 12 evenly spaced evidence stills.
+    if(r.frames.length<40)r.frames.push({time:sec,image:full.toDataURL('image/jpeg',.68)});
+   }else if(r.frames.length<12&&i%Math.max(1,Math.floor(times.length/12))===0){
+    r.frames.push({time:sec,image:full.toDataURL('image/jpeg',.72)});
+   }
    let parsed=[];
    if(isMobilization){
     if(i<2&&podiumRankByScore.size<3){
