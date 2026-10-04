@@ -1698,7 +1698,18 @@ function showReview(r){
   const checked=r.selection?.has(key)?r.selection.get(key):allowed;
   const tone=r.kind==='perf'?'performance':label==='violation'?'new':label==='update'?'update':label==='already_recorded'?'already':'other';
   const gap=isAm?amGapBefore.get(displayPos):null;
-  const gapHtml=gap?'<div class="nocr-am-gap">⚠ '+gap.missing+' '+(gap.missing===1?'Spieler fehlt':'Spieler fehlen')+' zwischen Rang '+gap.from+' und '+gap.to+'</div>':'';
+  const gapHtml=gap?('<div class="nocr-am-gap"><div class="nocr-am-gap-head">⚠ '+gap.missing+' '+(gap.missing===1?'Spieler fehlt':'Spieler fehlen')+' zwischen Rang '+gap.from+' und '+gap.to+'</div>'+
+   Array.from({length:gap.missing},(_,gi)=>{
+    const rank=gap.from+gi+1;
+    return '<div class="nocr-am-gap-row" data-am-gap-rank="'+rank+'">'+
+     '<span class="nocr-am-gap-rank">Rang '+rank+'</span>'+
+     '<select data-am-gap-alliance="'+rank+'"><option value="">– '+esc(reviewText('chooseAlliance'))+' –</option>'+allianceOptions(r.members)+'</select>'+
+     '<select data-am-gap-player="'+rank+'"><option value="">– '+esc(tr('selectPlayer'))+' –</option></select>'+
+     '<input type="text" inputmode="numeric" autocomplete="off" data-am-gap-score="'+rank+'" placeholder="'+esc(tr('score'))+'">'+
+     '<button type="button" class="btn secondary" data-am-gap-add="'+rank+'">Hinzufügen</button>'+
+     '<span class="nocr-am-gap-status" data-am-gap-status="'+rank+'"></span>'+
+    '</div>';
+   }).join('')+'</div>'):'';
   const amSeq=isAm?'<span class="nocr-am-seq">#'+(displayPos+1)+'</span>':'';
   const rankBadge=isAm&&h.rank?'<span class="nocr-am-rank">Rang '+esc(h.rank)+'</span>':'';
   return gapHtml+'<article class="nocr-hit nocr-hit--'+tone+'">'+amSeq+'<label class="nocr-hit-check"><input type="checkbox" data-hit="'+i+'" '+(checked?'checked':'')+' '+(needsEvidence?'disabled':'')+'>'+
@@ -1748,6 +1759,48 @@ function showReview(r){
   h.score=value;
   if(r.kind==='law'){status(reviewText('preview'));await refreshReview(r)}
  }));
+
+ if(isAm){
+  const populateGapPlayers=rank=>{
+   const alliance=root.querySelector('[data-am-gap-alliance="'+rank+'"]')?.value||'';
+   const select=root.querySelector('[data-am-gap-player="'+rank+'"]');
+   if(!select)return;
+   select.innerHTML='<option value="">– '+esc(tr('selectPlayer'))+' –</option>'+
+    alphabeticalRoster(r.members)
+     .filter(({p})=>alliance&&(alliance===UNAFFILIATED_CODE?p.alliance_code==null:p.alliance_code===alliance))
+     .map(({p,i})=>selectOption(p.player_name+' · '+(p.player_game_id||''),i)).join('');
+  };
+  root.querySelectorAll('[data-am-gap-alliance]').forEach(sel=>{
+   const rank=sel.dataset.amGapAlliance;
+   sel.addEventListener('change',()=>populateGapPlayers(rank));
+  });
+  root.querySelectorAll('[data-am-gap-score]').forEach(input=>input.addEventListener('blur',()=>{
+   const value=parsePoints(input.value);
+   if(value!==null)input.value=points(value);
+  }));
+  root.querySelectorAll('[data-am-gap-add]').forEach(btn=>btn.addEventListener('click',()=>{
+   const rank=Number(btn.dataset.amGapAdd);
+   const alliance=root.querySelector('[data-am-gap-alliance="'+rank+'"]')?.value||'';
+   const playerIndex=root.querySelector('[data-am-gap-player="'+rank+'"]')?.value||'';
+   const score=parsePoints(root.querySelector('[data-am-gap-score="'+rank+'"]')?.value||'');
+   const out=root.querySelector('[data-am-gap-status="'+rank+'"]');
+   if(!alliance||playerIndex===''){if(out)out.textContent=reviewText('missingPlayer');return}
+   if(score===null){if(out)out.textContent=reviewText('invalidScore');return}
+   const p=r.members[Number(playerIndex)];
+   if(!p){if(out)out.textContent=reviewText('missingPlayer');return}
+   const existing=r.hits.find(x=>String(x.player?.player_game_id||x.player?.player_id)===String(p.player_game_id||p.player_id));
+   if(existing&&existing.score>=score){if(out)out.textContent=reviewText('higher');return}
+   if(existing)r.hits=r.hits.filter(x=>x!==existing);
+   r.hits.push({
+    player:p,name:p.player_name,alliance:p.alliance_code??null,
+    score,rank,manual:true,manualGap:true,trackingOnly:p.alliance_code==null,
+    observations:1,consensus:1
+   });
+   if(out)out.textContent='✓';
+   r.hits.sort((a,b)=>Number(b.score)-Number(a.score));
+   showReview(r);
+  }));
+ }
  const mapAlliance=$('#nocrMapAlliance',root),mapPlayer=$('#nocrMapPlayer',root);
  if(mapAlliance&&mapPlayer){
   const populate=()=>{
@@ -2011,5 +2064,5 @@ function openPerformance(){
 }
 window.NAP_NATIVE_IMPORTER={initLaw,openLaw,openPerformance};
 
-(()=>{if(!document.getElementById('am-review-debug-style')){const s=document.createElement('style');s.id='am-review-debug-style';s.textContent='.nocr-hit{position:relative}.nocr-am-seq{position:absolute;left:8px;top:8px;font-size:11px;font-weight:800;opacity:.65}.nocr-am-rank{display:inline-block;margin-left:8px;padding:2px 7px;border:1px solid currentColor;border-radius:999px;font-size:11px;font-weight:800}.nocr-am-gap{margin:8px 0;padding:9px 12px;border:1px dashed rgba(148,163,184,.35);border-radius:10px;font-size:12px;font-weight:700}.nocr-am-summary{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;margin:10px 0;padding:10px 12px;border:1px solid rgba(148,163,184,.35);border-radius:10px}.nocr-am-summary span{opacity:.75;font-size:12px}';document.head.appendChild(s)}})();
+(()=>{if(!document.getElementById('am-review-debug-style')){const s=document.createElement('style');s.id='am-review-debug-style';s.textContent='.nocr-hit{position:relative}.nocr-am-seq{position:absolute;left:8px;top:8px;font-size:11px;font-weight:800;opacity:.65}.nocr-am-rank{display:inline-block;margin-left:8px;padding:2px 7px;border:1px solid currentColor;border-radius:999px;font-size:11px;font-weight:800}.nocr-am-gap{margin:8px 0;padding:10px 12px;border:1px dashed rgba(148,163,184,.35);border-radius:10px;font-size:12px}.nocr-am-gap-head{font-weight:800;margin-bottom:8px}.nocr-am-gap-row{display:grid;grid-template-columns:auto minmax(120px,1fr) minmax(160px,1.2fr) 120px auto auto;gap:8px;align-items:center;margin-top:8px}.nocr-am-gap-row select,.nocr-am-gap-row input{min-width:0}.nocr-am-gap-rank{font-weight:800;white-space:nowrap}.nocr-am-gap-status{min-width:18px}@media(max-width:760px){.nocr-am-gap-row{grid-template-columns:1fr 1fr}.nocr-am-gap-rank,.nocr-am-gap-status{grid-column:auto}.nocr-am-gap-row button{width:100%}}.nocr-am-summary{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;margin:10px 0;padding:10px 12px;border:1px solid rgba(148,163,184,.35);border-radius:10px}.nocr-am-summary span{opacity:.75;font-size:12px}';document.head.appendChild(s)}})();
 })();
