@@ -1598,6 +1598,34 @@ async function analyze(){
    r.missingMatchedRanks=[];
   }
   progress(2,96,r.hits.length);
+
+  // Dense manual-review frames for Alliance Mobilization.
+  // Keep this separate from OCR so finer screenshots do not multiply Tesseract work.
+  if(isMobilization){
+   const reviewFrames=[];
+   const reviewEnd=Math.max(.08,dur-.10);
+   const reviewStep=.35;
+   const reviewTimes=[];
+   for(let t=.08;t<reviewEnd;t+=reviewStep)reviewTimes.push(t);
+   reviewTimes.push(reviewEnd);
+
+   progress(2,97,r.hits.length,'review-frames');
+   for(let fi=0;fi<reviewTimes.length&&reviewFrames.length<120;fi++){
+    if(run!==r)break;
+    const sec=reviewTimes[fi];
+    try{
+     await seek(video,sec);
+     const full=frameCanvas(video);
+     const crop=rankingCanvas(full);
+     reviewFrames.push({time:sec,image:crop.toDataURL('image/jpeg',.64)});
+    }catch(err){
+     console.warn('Skipping AM review frame',sec,err);
+    }
+    if(fi%8===0)await new Promise(resolve=>setTimeout(resolve,0));
+   }
+   if(reviewFrames.length)r.frames=reviewFrames;
+  }
+
   if(r.kind==='law'){
    const occ=selectedOcc(),regularHits=r.hits.filter(h=>!isTrackingHit(h));
    r.preview=regularHits.length?await rpc('preview_screen_recording_nap_occurrence_v2',{
