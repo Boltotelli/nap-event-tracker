@@ -1647,6 +1647,25 @@ async function refreshReview(r){
 }
 function showReview(r){
  const root=r.root,preview=r.preview?.results||[],statuses=new Map(preview.map(x=>[String(x.player_game_id||x.player_id||''),x]));
+ const isAm=r.kind==='perf'&&$('#nocrType',root)?.value==='alliance_mobilization';
+ const reviewHits=isAm
+  ?r.hits.map((h,originalIndex)=>({h,originalIndex})).sort((a,b)=>Number(b.h.score)-Number(a.h.score))
+  :r.hits.map((h,originalIndex)=>({h,originalIndex}));
+ const amGapBefore=new Map();
+ if(isAm){
+  const anchors=[];
+  for(let pos=0;pos<reviewHits.length;pos++){
+   const rank=Number(reviewHits[pos].h.rank);
+   if(Number.isInteger(rank)&&rank>=1)anchors.push({pos,rank});
+  }
+  for(let i=1;i<anchors.length;i++){
+   const prev=anchors[i-1],next=anchors[i];
+   const detectedBetween=next.pos-prev.pos-1;
+   const rankingBetween=next.rank-prev.rank-1;
+   const missing=rankingBetween-detectedBetween;
+   if(missing>0)amGapBefore.set(next.pos,{missing,from:prev.rank,to:next.rank});
+  }
+ }
  $('#nocrReview',root).hidden=false;
  const counts=r.kind==='law'&&r.preview?[
  [r.preview.violations,reviewText('newCount')],
@@ -1669,7 +1688,7 @@ function showReview(r){
  const missingHitText=missingHitRanks.length?' · ⚠ '+ocr2('missingHits')+': '+missingHitRanks.join(', '):'';
  const covText=cov?.min&&cov?.max?' · '+ocr2('coverage')+' '+cov.min+'–'+cov.max+(cov.missing.length?' · ⚠ '+ocr2('missing')+': '+cov.missing.join(', '):' · ✓'):'';
  $('#nocrCount',root).textContent=parts.join(' · ')+covText+missingHitText;
- $('#nocrResults',root).innerHTML=r.hits.map((h,i)=>{
+ $('#nocrResults',root).innerHTML=reviewHits.map(({h,originalIndex:i},displayPos)=>{
   const lookup=statuses.get(String(h.player?.player_game_id||h.player?.player_id||''));
   if(r.kind==='law'&&lookup?.status==='exempt')return '';
   const st=statuses.get(String(h.player?.player_game_id||h.player?.player_id||'')),label=st?.status||'',tracking=r.kind==='law'&&isTrackingHit(h);
@@ -1678,14 +1697,19 @@ function showReview(r){
   const key=String(h.player?.player_game_id||h.player?.player_id||'');
   const checked=r.selection?.has(key)?r.selection.get(key):allowed;
   const tone=r.kind==='perf'?'performance':label==='violation'?'new':label==='update'?'update':label==='already_recorded'?'already':'other';
-  return '<article class="nocr-hit nocr-hit--'+tone+'"><label class="nocr-hit-check"><input type="checkbox" data-hit="'+i+'" '+(checked?'checked':'')+' '+(needsEvidence?'disabled':'')+'>'+
-   '<span><strong>'+esc(h.player.player_name)+'</strong><small>'+esc(isTrackingHit(h)?ocr2('unaffiliated'):(h.alliance||h.player.alliance_code||''))+' · '+esc(h.player.player_game_id||'')+(h.rank?' · '+esc(tr('rank'))+' '+esc(h.rank):'')+(h.observations>1&&!(r.kind==='perf'&&$('#nocrType',root).value==='alliance_mobilization')?' · '+esc(h.consensus)+'/'+esc(h.observations):'')+(h.manual?' · '+esc(reviewText('manual')):'')+'</small></span></label>'+
+  const gap=isAm?amGapBefore.get(displayPos):null;
+  const gapHtml=gap?'<div class="nocr-am-gap">⚠ '+gap.missing+' '+(gap.missing===1?'Spieler fehlt':'Spieler fehlen')+' zwischen Rang '+gap.from+' und '+gap.to+'</div>':'';
+  const amSeq=isAm?'<span class="nocr-am-seq">#'+(displayPos+1)+'</span>':'';
+  const rankBadge=isAm&&h.rank?'<span class="nocr-am-rank">Rang '+esc(h.rank)+'</span>':'';
+  return gapHtml+'<article class="nocr-hit nocr-hit--'+tone+'">'+amSeq+'<label class="nocr-hit-check"><input type="checkbox" data-hit="'+i+'" '+(checked?'checked':'')+' '+(needsEvidence?'disabled':'')+'>'+
+   '<span><strong>'+esc(h.player.player_name)+'</strong><small>'+esc(isTrackingHit(h)?ocr2('unaffiliated'):(h.alliance||h.player.alliance_code||''))+' · '+esc(h.player.player_game_id||'')+(!isAm&&h.rank?' · '+esc(tr('rank'))+' '+esc(h.rank):'')+(h.observations>1&&!isAm?' · '+esc(h.consensus)+'/'+esc(h.observations):'')+(h.manual?' · '+esc(reviewText('manual')):'')+'</small>'+rankBadge+'</span></label>'+
    '<input type="text" inputmode="numeric" autocomplete="off" data-score="'+i+'" value="'+esc(points(h.score))+'" aria-label="'+esc(tr('score'))+'">'+
    (r.kind==='perf'&&$('#nocrType',root).value==='kvk_prep'?'<input type="number" min="1" max="200" step="1" data-rank="'+i+'" value="'+esc(h.rank||'')+'" aria-label="'+esc(tr('rank'))+'">':'')+
    reviewStatus(h,r,st)+(needsEvidence?'<div class="nocr-status error">'+esc(tr('evidenceRequired'))+'</div>':'')+
    (r.kind==='law'&&!tracking&&st?.post_contact_confirmation_required?'<label class="nocr-post-contact-confirm"><input type="checkbox" data-post-contact-confirm="'+i+'" '+(h.postContactConfirmed?'checked':'')+'><span><strong>'+esc(postContactText('title'))+'</strong><small>'+esc(postContactText('hint'))+'</small></span></label>':'')+
    (h.image?'<details><summary>'+esc(tr('frame'))+'</summary><img src="'+h.image+'" alt="'+esc(tr('frame'))+'"></details>':'')+'</article>'
  }).join('')+
+ (isAm?'<div class="nocr-am-summary"><strong>'+r.hits.length+' Spieler erkannt</strong><span>Sortiert nach Punkten · # = erkannter Eintrag · Rang = direkt sicher gelesen</span></div>':'')+
  (r.kind==='law'&&preview.some(x=>x.status==='exempt')?'<details class="nocr-exempt-compact"><summary><span class="nocr-exempt-icon" aria-hidden="true">✓</span><strong>'+preview.filter(x=>x.status==='exempt').length+' '+esc(reviewText('exemptCollapsed'))+'</strong><span>'+esc(reviewText('exemptShort'))+'</span></summary><p>'+esc(reviewText('exemptNote'))+'</p><div class="nocr-exempt-names">'+preview.filter(x=>x.status==='exempt').map(x=>'<span>'+esc(x.player_name||'')+'</span>').join('')+'</div></details>':'')+
  (r.unmatched.length?'<details class="nocr-unmatched"><summary>'+esc(tr('unmatched'))+' ('+r.unmatched.length+')</summary>'+
  '<label>'+esc(tr('unmatched'))+'<select id="nocrUnknown">'+r.unmatched.map((x,i)=>selectOption(x.raw,i)).join('')+'</select></label>'+
@@ -1986,4 +2010,6 @@ function openPerformance(){
  root.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 window.NAP_NATIVE_IMPORTER={initLaw,openLaw,openPerformance};
+
+(()=>{if(!document.getElementById('am-review-debug-style')){const s=document.createElement('style');s.id='am-review-debug-style';s.textContent='.nocr-hit{position:relative}.nocr-am-seq{position:absolute;left:8px;top:8px;font-size:11px;font-weight:800;opacity:.65}.nocr-am-rank{display:inline-block;margin-left:8px;padding:2px 7px;border:1px solid currentColor;border-radius:999px;font-size:11px;font-weight:800}.nocr-am-gap{margin:8px 0;padding:9px 12px;border:1px dashed rgba(148,163,184,.35);border-radius:10px;font-size:12px;font-weight:700}.nocr-am-summary{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;margin:10px 0;padding:10px 12px;border:1px solid rgba(148,163,184,.35);border-radius:10px}.nocr-am-summary span{opacity:.75;font-size:12px}';document.head.appendChild(s)}})();
 })();
