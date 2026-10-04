@@ -404,7 +404,13 @@ function mobilizationCropsForCenter(frame,center,period){
  };
 }
 function mobilizationRankStrip(frame){
- return cropRelative(frame,.055,.34,.205,.76,460);
+ // The rank digits sit very close to the left edge on 720px recordings.
+ // V16 started at 5.5% and could clip the first digit entirely.
+ return cropRelative(frame,.018,.34,.165,.76,420);
+}
+function mobilizationRankCrop(frame,center,period){
+ const cy=center/frame.height,py=period/frame.height;
+ return cropRelative(frame,.018,cy-py*.26,.145,cy+py*.20,260);
 }
 function normalizedLineY(line,canvas){
  const b=line?.bbox;if(!b||!canvas?.height)return null;
@@ -431,8 +437,25 @@ async function readMobilizationRanks(frame,geometry,worker){
    const d=Math.abs(center/H-fullY);
    if(d<bestD){best=i;bestD=d}
   });
-  if(best>=0&&bestD<=periodNorm*.42)direct.set(best,rank);
+  if(best>=0&&bestD<=periodNorm*.46)direct.set(best,rank);
  }
+
+ // Fallback: read at most two individual rank cells. One clean rank is enough
+ // because Alliance Mobilization is a contiguous ranking.
+ if(!direct.size&&geometry.centers.length){
+  const probes=[Math.floor(geometry.centers.length/2),geometry.centers.length-1]
+   .filter((v,i,a)=>v>=0&&a.indexOf(v)===i);
+  try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'7',tessedit_char_whitelist:'0123456789'})}catch{}
+  for(const i of probes){
+   const crop=mobilizationRankCrop(frame,geometry.centers[i],geometry.period);
+   let rank=parseMobilizationRankValue((await worker.recognize(crop)).data?.text||'');
+   if(rank==null){
+    rank=parseMobilizationRankValue((await worker.recognize(enhancedCanvas(crop))).data?.text||'');
+   }
+   if(rank!=null){direct.set(i,rank);break}
+  }
+ }
+
  const offsets=new Map();
  for(const [i,rank] of direct){
   const off=rank-i;
@@ -440,8 +463,7 @@ async function readMobilizationRanks(frame,geometry,worker){
  }
  const bestOffset=[...offsets.entries()].sort((a,b)=>b[1]-a[1])[0]||null;
  const byIndex=new Map(direct);
- // AM is a dense 1–50 list. Even one clean numeric anchor (for example rank 4
- // below the medal rows) defines the contiguous ranks of the other visible cards.
+ // One trustworthy anchor defines all visible row ranks in the dense 1–50 list.
  if(bestOffset&&bestOffset[1]>=1){
   const off=bestOffset[0];
   if(off>=1&&off<=50){
@@ -451,6 +473,7 @@ async function readMobilizationRanks(frame,geometry,worker){
    });
   }
  }
+ try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'6',tessedit_char_whitelist:''})}catch{}
  return {byIndex,allRanks:[...new Set(byIndex.values())].sort((a,b)=>a-b)};
 }
 
@@ -963,12 +986,13 @@ function baseFrameTimes(dur){
 }
 function performanceFrameTimes(dur){
  const end=Math.max(.08,dur-.10),times=[];
- const add=t=>{const v=Math.max(.05,Math.min(end,t));if(!times.some(x=>Math.abs(x-v)<.10))times.push(v)};
- // Keep extra early samples for podium/decorated rows, then sample densely
- // enough that faster scroll sections cannot skip blocks of 3–4 players.
- [0.10,0.35,0.65,0.95,1.25].forEach(add);
- const count=Math.min(34,Math.max(28,Math.ceil(dur/1.15)));
- for(let i=1;i<=count;i++)add(1.25+(end-1.25)*(i/(count+1)));
+ const add=t=>{const v=Math.max(.05,Math.min(end,t));if(!times.some(x=>Math.abs(x-v)<.12))times.push(v)};
+ // AM rows stay visible long enough that ~2.5 s spacing still overlaps adjacent
+ // viewports. V16 used 28–34 full OCR frames, which made desktop runs very slow.
+ [0.12,0.75,1.45].forEach(add);
+ const count=Math.min(18,Math.max(12,Math.ceil(dur/2.6)));
+ const start=1.45;
+ for(let i=1;i<=count;i++)add(start+(end-start)*(i/(count+1)));
  add(end);
  return times.sort((a,b)=>a-b);
 }
@@ -1330,7 +1354,7 @@ async function analyze(){
    };
    for(const rank of missingNow){
     addRescue(medianTime(rankMap.get(rank)));
-    if(rescueTimesAm.length>=8)break;
+    if(rescueTimesAm.length>=4)break;
    }
    if(rescueTimesAm.length){
     progress(2,90,observations.size,'rescue');
@@ -1364,7 +1388,7 @@ async function analyze(){
 
   // Quality pass: only re-read the name area of still-open rows at higher resolution.
   // This spends extra time where it matters instead of re-OCRing the whole video.
-  const qualityTargets=groupedUnmatched.filter(g=>Number.isInteger(g.rank)&&g.variants?.some(v=>v.bbox&&Number.isFinite(v.time))).slice(0,10);
+  const qualityTargets=groupedUnmatched.filter(g=>Number.isInteger(g.rank)&&g.variants?.some(v=>v.bbox&&Number.isFinite(v.time))).slice(0,isMobilization?4:10);
   if(qualityTargets.length){
    progress(2,94,observations.size);
    try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'7'})}catch{}
