@@ -1068,6 +1068,42 @@ function normalizeMobilizationRanks(hits){
   drop.rankConflictCleared=true;
   byRank.set(rank,keep);
  }
+
+ // Repair only mathematically unambiguous gaps. AM is sorted by score. If two
+ // trusted rank anchors enclose exactly the same number of unranked players as
+ // the numeric rank gap, those missing ranks can be restored safely.
+ const ordered=[...out]
+  .filter(h=>Number.isFinite(Number(h.score)))
+  .sort((a,b)=>Number(b.score)-Number(a.score));
+ const anchors=[];
+ for(let i=0;i<ordered.length;i++){
+  const rank=Number(ordered[i].rank);
+  if(Number.isInteger(rank)&&rank>=1&&rank<=999)anchors.push({i,rank});
+ }
+ for(let a=0;a<anchors.length-1;a++){
+  const left=anchors[a],right=anchors[a+1];
+  if(right.rank<=left.rank)continue;
+  const between=ordered.slice(left.i+1,right.i);
+  const needed=right.rank-left.rank-1;
+  if(!between.length||between.length!==needed)continue;
+  if(between.some(h=>Number.isInteger(Number(h.rank))))continue;
+
+  // Do not infer across equal-score ties because their internal order can be
+  // ambiguous even though the surrounding ranks are known.
+  const segment=ordered.slice(left.i,right.i+1);
+  let tied=false;
+  for(let j=1;j<segment.length;j++){
+   if(Number(segment[j-1].score)===Number(segment[j].score)){tied=true;break}
+  }
+  if(tied)continue;
+
+  between.forEach((h,j)=>{
+   h.rank=left.rank+j+1;
+   h.rankInferred=true;
+   h.rankGapRepaired=true;
+  });
+ }
+
  return out;
 }
 function consensusHit(list){
