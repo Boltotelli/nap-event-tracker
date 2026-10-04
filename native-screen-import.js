@@ -1367,7 +1367,7 @@ async function analyze(){
   const isMobilization=r.kind==='perf'&&perfType==='alliance_mobilization';
   if(isMobilization&&perfOcc()?.event_schedule_id){
    try{
-    const extras=await rpc('get_performance_candidate_roster',{p_event_schedule_id:perfOcc().event_schedule_id});
+    const extras=await rpc('get_performance_candidate_roster_test',{p_event_schedule_id:perfOcc().event_schedule_id});
     if(extras?.length){
      const known=new Map(members.map(p=>[String(p.player_game_id||p.player_id),p]));
      members=extras.map(p=>{
