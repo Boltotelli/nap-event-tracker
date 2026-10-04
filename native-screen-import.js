@@ -985,6 +985,22 @@ function recordRank(rank,time,map){
  if(!Number.isInteger(rank)||rank<1||rank>999)return;
  if(!map.has(rank))map.set(rank,[]);map.get(rank).push(time);
 }
+function validatedMobilizationCoverage(hits,unmatched=[]){
+ const ranks=new Set();
+ for(const h of hits||[]){
+  const rank=Number(h?.rank);
+  if(Number.isInteger(rank)&&rank>=1&&rank<=100)ranks.add(rank);
+ }
+ for(const u of unmatched||[]){
+  const rank=Number(u?.rank);
+  if(Number.isInteger(rank)&&rank>=1&&rank<=100&&!u?.rankConflict)ranks.add(rank);
+ }
+ const seen=[...ranks].sort((a,b)=>a-b);
+ if(!seen.length)return {min:null,max:null,seen:[],missing:[]};
+ const min=seen[0],max=seen[seen.length-1],set=new Set(seen),missing=[];
+ for(let r=min;r<=max;r++)if(!set.has(r))missing.push(r);
+ return {min,max,seen,missing};
+}
 function rankCoverage(map){
  const ranks=[...map.keys()].filter(r=>Number.isInteger(r)&&r>=1&&r<=999).sort((a,b)=>a-b);
  if(!ranks.length)return {min:null,max:null,seen:[],missing:[]};
@@ -1563,8 +1579,14 @@ async function analyze(){
   if(isMobilization){r.hits=applyMobilizationPodiumRanks(r.hits,podiumRankByScore);r.hits=normalizeMobilizationRanks(r.hits);}
   r.hits.sort((a,b)=>(a.rank&&b.rank?a.rank-b.rank:b.score-a.score));
   matchedRanks=new Set(r.hits.map(h=>h.rank).filter(Boolean));
-  r.missingMatchedRanks=isMobilization?(r.coverage?.seen||[]).filter(rank=>!matchedRanks.has(rank)):[];
   r.unmatched=groupedUnmatched.filter(g=>Number.isInteger(g.rank)&&!matchedRanks.has(g.rank)).slice(0,40);
+  if(isMobilization){
+   r.coverage=validatedMobilizationCoverage(r.hits,r.unmatched);
+   matchedRanks=new Set(r.hits.map(h=>h.rank).filter(Boolean));
+   r.missingMatchedRanks=(r.coverage?.seen||[]).filter(rank=>!matchedRanks.has(rank));
+  }else{
+   r.missingMatchedRanks=[];
+  }
   progress(2,96,r.hits.length);
   if(r.kind==='law'){
    const occ=selectedOcc(),regularHits=r.hits.filter(h=>!isTrackingHit(h));
