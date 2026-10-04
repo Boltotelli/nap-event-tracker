@@ -131,9 +131,43 @@ function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'
 async function headers(json=true){
  let s=getSession();if(!s?.access_token)throw Error('Your V2 session expired. Please sign in again.');
  if(s.expires_at&&s.expires_at<Date.now()/1000+40&&s.refresh_token){
-  const r=await fetch(API+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:s.refresh_token})});
-  if(!r.ok)throw Error('Your V2 session expired. Please sign in again.');
-  const d=await r.json();s={...d,expires_at:Math.floor(Date.now()/1000)+(d.expires_in||3600)};localStorage.setItem(SESSION_KEY,JSON.stringify(s));
+  const tokenBefore=s.access_token,refreshBefore=s.refresh_token;
+  const r=await fetch(API+'/auth/v1/token?grant_type=refresh_token',{
+   method:'POST',
+   headers:{apikey:KEY,'Content-Type':'application/json'},
+   body:JSON.stringify({refresh_token:refreshBefore})
+  });
+  if(r.ok){
+   const d=await r.json();
+   s={...d,expires_at:Math.floor(Date.now()/1000)+(d.expires_in||3600)};
+   localStorage.setItem(SESSION_KEY,JSON.stringify(s));
+  }else{
+   // A long review can overlap with the main app refreshing the same Supabase
+   // session. Re-read storage before declaring the importer session expired.
+   const latest=getSession();
+   const latestIsNewer=latest?.access_token&&(
+    latest.access_token!==tokenBefore||
+    latest.refresh_token!==refreshBefore||
+    Number(latest.expires_at||0)>Number(s.expires_at||0)
+   );
+   if(latestIsNewer){
+    s=latest;
+    if(s.expires_at&&s.expires_at<Date.now()/1000+40&&s.refresh_token){
+     const retry=await fetch(API+'/auth/v1/token?grant_type=refresh_token',{
+      method:'POST',
+      headers:{apikey:KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({refresh_token:s.refresh_token})
+     });
+     if(retry.ok){
+      const d=await retry.json();
+      s={...d,expires_at:Math.floor(Date.now()/1000)+(d.expires_in||3600)};
+      localStorage.setItem(SESSION_KEY,JSON.stringify(s));
+     }else throw Error('Your session could not be renewed. Please sign in again; your reviewed entries remain on this page.');
+    }
+   }else{
+    throw Error('Your session could not be renewed. Please sign in again; your reviewed entries remain on this page.');
+   }
+  }
  }
  return {apikey:KEY,Authorization:'Bearer '+s.access_token,...(json?{'Content-Type':'application/json'}:{})};
 }
@@ -1604,7 +1638,7 @@ async function analyze(){
   if(isMobilization){
    const reviewFrames=[];
    const reviewEnd=Math.max(.08,dur-.10);
-   const reviewStep=.45;
+   const reviewStep=1.00;
    const reviewTimes=[];
    for(let t=.08;t<reviewEnd;t+=reviewStep)reviewTimes.push(t);
    reviewTimes.push(reviewEnd);
