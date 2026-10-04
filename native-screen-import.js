@@ -428,6 +428,10 @@ async function readMobilizationRanks(frame,geometry,worker){
  try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'6',tessedit_char_whitelist:'0123456789'})}catch{}
  const data=(await worker.recognize(strip,{}, {text:true,blocks:true})).data||{};
  const H=frame.height,periodNorm=geometry.period/H;
+
+ // V27: ranks are evidence, not something to infer. A rank is accepted only
+ // when OCR reads it directly from the rank column at the same Y position as
+ // the score-anchored player row.
  for(const line of ocrLinesFromBlocks(data.blocks||[])){
   const rank=parseMobilizationRankValue(line.text),y=normalizedLineY(line,strip);
   if(rank==null||y==null)continue;
@@ -437,57 +441,17 @@ async function readMobilizationRanks(frame,geometry,worker){
    const d=Math.abs(center/H-fullY);
    if(d<bestD){best=i;bestD=d}
   });
-  if(best>=0&&bestD<=periodNorm*.46)direct.set(best,rank);
- }
-
- // Fallback: read at most two individual rank cells. One clean rank is enough
- // because Alliance Mobilization is a contiguous ranking.
- if(!direct.size&&geometry.centers.length){
-  const probes=[Math.floor(geometry.centers.length/2),geometry.centers.length-1]
-   .filter((v,i,a)=>v>=0&&a.indexOf(v)===i);
-  try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'7',tessedit_char_whitelist:'0123456789'})}catch{}
-  for(const i of probes){
-   const crop=mobilizationRankCrop(frame,geometry.centers[i],geometry.period);
-   let rank=parseMobilizationRankValue((await worker.recognize(crop)).data?.text||'');
-   if(rank==null){
-    rank=parseMobilizationRankValue((await worker.recognize(enhancedCanvas(crop))).data?.text||'');
-   }
-   if(rank!=null){direct.set(i,rank);break}
+  if(best>=0&&bestD<=periodNorm*.34){
+   // If two OCR lines compete for one row, do not manufacture a rank.
+   if(direct.has(best)&&direct.get(best)!==rank)direct.delete(best);
+   else direct.set(best,rank);
   }
  }
 
- const byIndex=new Map(direct);
-
- // Propagate ranks using physical row distance, not array indexes. If score OCR
- // misses a row, the next detected center is ~2 row-heights away and therefore
- // correctly advances the rank by 2 instead of compressing the ranking.
- if(direct.size&&Number.isFinite(geometry.period)&&geometry.period>0){
-  const anchors=[...direct.entries()].map(([i,rank])=>({
-   i,rank,center:Number(geometry.centers[i])
-  })).filter(a=>Number.isFinite(a.center));
-
-  geometry.centers.forEach((center,i)=>{
-   if(byIndex.has(i))return;
-   const votes=[];
-   for(const a of anchors){
-    const rawDelta=(Number(center)-a.center)/geometry.period;
-    const rowDelta=Math.round(rawDelta);
-    const residual=Math.abs(rawDelta-rowDelta);
-    if(residual>.28)continue;
-    const rank=a.rank+rowDelta;
-    if(rank>=1&&rank<=100)votes.push(rank);
-   }
-   if(!votes.length)return;
-   const counts=new Map();
-   for(const rank of votes)counts.set(rank,(counts.get(rank)||0)+1);
-   const chosen=[...counts.entries()].sort((a,b)=>b[1]-a[1])[0];
-   // With several anchors require agreement; with one anchor the geometry
-   // itself is the safeguard through the residual check above.
-   if(chosen&&(anchors.length===1||chosen[1]>=2))byIndex.set(i,chosen[0]);
-  });
- }
+ // No single-cell fallback and no propagation from neighbouring rows.
+ // Missing direct rank OCR stays blank by design.
  try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'6',tessedit_char_whitelist:''})}catch{}
- return {byIndex,allRanks:[...new Set(byIndex.values())].sort((a,b)=>a-b)};
+ return {byIndex:direct,allRanks:[...new Set(direct.values())].sort((a,b)=>a-b)};
 }
 
 function mobilizationScoreStrip(frame){
@@ -1076,12 +1040,10 @@ function applyMobilizationPodiumRanks(hits,podiumRankByScore){
 }
 function normalizeMobilizationRanks(hits){
  if(!Array.isArray(hits)||!hits.length)return hits||[];
-
  const out=hits.map(h=>({...h}));
 
- // AM is score-sorted. If the top three recognized players are present, they
- // are the podium. This also repairs cases where normal-row OCR accidentally
- // assigns rank 2 to several later players.
+ // Podium is the only inferred AM rank: the ranking screen is score-sorted and
+ // the top three recognized entries are the visible podium cards.
  const top=[...out]
   .filter(h=>Number.isFinite(Number(h.score)))
   .sort((a,b)=>Number(b.score)-Number(a.score))
@@ -1089,63 +1051,39 @@ function normalizeMobilizationRanks(hits){
  const podiumIds=new Set(top.map(h=>String(h.player?.player_game_id||h.player?.player_id||h.name||'')));
  for(const h of out){
   const id=String(h.player?.player_game_id||h.player?.player_id||h.name||'');
-  if(Number(h.rank)>=1&&Number(h.rank)<=3&&!podiumIds.has(id)){
-   h.rank=null;
-   h.rankConflictCleared=true;
-  }
+  if(Number(h.rank)>=1&&Number(h.rank)<=3&&!podiumIds.has(id))h.rank=null;
  }
- top.forEach((h,i)=>{
-  h.rank=i+1;
-  h.podiumRank=true;
-  h.rankInferred=true;
- });
+ top.forEach((h,i)=>{h.rank=i+1;h.podiumRank=true;h.rankInferred=true});
 
- // Every remaining AM rank must be globally unique. Keep the strongest
- // supported assignment and clear weaker duplicates rather than displaying
- // impossible duplicate ranks.
+ // Direct OCR ranks must be globally unique. Conflicts are cleared rather than
+ // guessed.
  const byRank=new Map();
  const strength=h=>
-   (h.podiumRank?10000:0)+
-   Math.max(0,Number(h.consensus)||0)*100+
-   Math.max(0,Number(h.observations)||0)*10+
-   Math.max(0,Number(h.player?.confidence)||0);
+   (h.podiumRank?10000:0)+Math.max(0,Number(h.consensus)||0)*100+
+   Math.max(0,Number(h.observations)||0)*10+Math.max(0,Number(h.player?.confidence)||0);
  for(const h of out){
   const rank=Number(h.rank);
-  if(!Number.isInteger(rank)||rank<1||rank>999)continue;
+  if(!Number.isInteger(rank)||rank<1||rank>100)continue;
   if(!byRank.has(rank)){byRank.set(rank,h);continue}
   const incumbent=byRank.get(rank);
   const keep=strength(h)>strength(incumbent)?h:incumbent;
   const drop=keep===h?incumbent:h;
-  drop.rank=null;
-  drop.rankConflictCleared=true;
-  byRank.set(rank,keep);
+  drop.rank=null;drop.rankConflictCleared=true;byRank.set(rank,keep);
  }
 
-
- // Final sanity check: as scores decrease, ranks must strictly increase.
- // If OCR produces an impossible backward jump, clear the weaker rank instead
- // of showing a confidently wrong value.
- const rankedByScore=[...out]
+ // Score order is only used as a rejection rule, never to invent a rank.
+ const ordered=[...out]
   .filter(h=>Number.isFinite(Number(h.score))&&Number.isInteger(Number(h.rank)))
   .sort((a,b)=>Number(b.score)-Number(a.score));
- let lastRank=0,lastHit=null;
- for(const h of rankedByScore){
+ let maxRank=0;
+ for(const h of ordered){
   const rank=Number(h.rank);
-  if(rank>lastRank){lastRank=rank;lastHit=h;continue}
-  const curStrength=strength(h),prevStrength=lastHit?strength(lastHit):Infinity;
-  if(lastHit&&curStrength>prevStrength){
-   lastHit.rank=null;
-   lastHit.rankConflictCleared=true;
-   lastRank=rank;
-   lastHit=h;
-  }else{
-   h.rank=null;
-   h.rankConflictCleared=true;
-  }
+  if(rank>maxRank){maxRank=rank;continue}
+  if(!h.podiumRank){h.rank=null;h.rankConflictCleared=true}
  }
-
  return out;
 }
+
 function consensusHit(list){
  if(!list?.length)return null;
  const scores=new Map();
