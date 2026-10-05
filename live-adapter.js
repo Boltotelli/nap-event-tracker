@@ -2,7 +2,7 @@
 if(window.NAP2_LIVE_ADAPTER)return;window.NAP2_LIVE_ADAPTER=true;
 const C={u:'https://bdzlgirowutasrsycjfj.supabase.co',k:'sb_publishable_8i1ismeQtj9WM-xVN_Vm0w_Tj7AvVtL',s:'nap_v4_supabase_session'};
 let crownAllowed2=false;
-const S={a:null,profile:null,p:[],v:[],x:[],e:[],o:[],t:[],bans:[],spend:[],reviews:[],shared:[],settings:null,avatars:{},laws:[],lawCases:[],lawEvidence:[],performance:null,crown:null,activity:[],eventOptions:[],features:null,law9:null,notificationReads:new Set(),syncStatus:null,level4Hosting:[],napStats:[],sgWindow:null,supportTickets:[],supportMessages:[],supportEvidence:[]};
+const S={a:null,profile:null,p:[],v:[],x:[],e:[],o:[],t:[],bans:[],spend:[],reviews:[],shared:[],settings:null,avatars:{},laws:[],lawCases:[],lawEvidence:[],performance:null,crown:null,law14NonNap:null,law14NonNapPublic:[],activity:[],eventOptions:[],features:null,law9:null,notificationReads:new Set(),syncStatus:null,level4Hosting:[],napStats:[],sgWindow:null,supportTickets:[],supportMessages:[],supportEvidence:[]};
 let ses=null;try{ses=JSON.parse(localStorage.getItem(C.s)||'null')}catch{}
 let loginMode2='write';try{loginMode2=localStorage.getItem('nap_v2_login_mode')==='read'?'read':'write'}catch{}
 const isReadOnly2=()=>S.profile?.access_mode==='read';
@@ -264,6 +264,22 @@ const TIMER_VIEW_WORDS2={
 };
 function timerViewWords2(){return TIMER_VIEW_WORDS2[L()]||TIMER_VIEW_WORDS2.de}
 function timerRemaining2(end){const ms=new Date(end).getTime()-Date.now(),w=SANCTION_STATUS_WORDS2[L()]||SANCTION_STATUS_WORDS2.de;return Number.isFinite(ms)&&ms>0?dur(ms):w.expired}
+function law14NonNapTimer2(end){
+ const ms=new Date(end).getTime()-Date.now(),w=SANCTION_STATUS_WORDS2[L()]||SANCTION_STATUS_WORDS2.de;
+ if(!Number.isFinite(ms)||ms<=0)return w.expired;
+ const totalSeconds=Math.floor(ms/1000);
+ const days=Math.floor(totalSeconds/86400);
+ const hours=Math.floor((totalSeconds%86400)/3600);
+ const minutes=Math.floor((totalSeconds%3600)/60);
+ const seconds=totalSeconds%60;
+ return String(days).padStart(2,'0')+':'+String(hours).padStart(2,'0')+':'+String(minutes).padStart(2,'0')+':'+String(seconds).padStart(2,'0');
+}
+function refreshLaw14NonNapTimers2(){
+ document.querySelectorAll('[data-law14-nonnap-timer-end]').forEach(el=>{
+  const end=el.getAttribute('data-law14-nonnap-timer-end');
+  if(end)el.textContent=law14NonNapTimer2(end);
+ });
+}
 function activeOwnTimers2(){return [...new Set((S.x||[]).map(s=>s.player_name).filter(Boolean))].map(name=>sanctionState2(name).currentSanction).filter(s=>{if(!s?.end_at||Number(s.level)<2)return false;const v=(S.v||[]).find(v=>String(v.id)===String(s.violation_id));return sanctionStatus2(s,v).key==='active'}).sort((a,b)=>new Date(a.end_at)-new Date(b.end_at))}
 function refreshSanctionTimerLabels2(){document.querySelectorAll('[data-timer-end]').forEach(el=>{const end=el.getAttribute('data-timer-end');if(end)el.textContent=timerRemaining2(end)})}
 function actions(){
@@ -350,7 +366,7 @@ function syncReadOnlyChrome2(){
 function decorate(){const ab=document.querySelector('.alliance-badge');if(ab)ab.innerHTML=allianceLogo2(S.a,'alliance-top-logo')+'<span>'+E(S.a)+'</span>';document.querySelectorAll('[data-current-alliance]').forEach(x=>x.textContent=S.a);const u=document.querySelector('.user-pill');if(u){u.innerHTML=allianceLogo2(S.a,'alliance-user-logo')+'<span>'+E(S.a)+'</span> '+(isReadOnly2()?'<span class="n2access-badge">◉ '+E(accessWords2().readOnly)+'</span>':'<span class="n2live">'+E(t('live'))+'</span>');u.title=t('logout');u.onclick=logout2}syncReadOnlyChrome2()}
 async function load(){
  const a=encodeURIComponent(S.a);
- const [p1,v,x,e,o,tr,bans,spend,settings,reviews,shared,notificationReads,syncStatus,level4Hosting,napStats,sgWindow,performance,supportUnread]=await Promise.all([
+ const [p1,v,x,e,o,tr,bans,spend,settings,reviews,shared,notificationReads,syncStatus,level4Hosting,napStats,sgWindow,performance,supportUnread,law14NonNapPublic]=await Promise.all([
   tab('players','select=*&alliance_code=eq.'+a+'&order=name.asc'),
   tab('violations','select=*&alliance_code=eq.'+a+'&order=occurred_at.desc'),
   tab('sanctions','select=*&alliance_code=eq.'+a+'&order=created_at.desc'),
@@ -368,12 +384,13 @@ async function load(){
   rpc('get_nap_violation_stats_v2',{}).catch(()=>[]),
   rpc('get_current_sg_window_v2',{}).catch(()=>null),
   rpc('get_performance_dashboard',{}).catch(()=>null),
-  rpc('get_support_unread_count',{}).catch(()=>0)
+  rpc('get_support_unread_count',{}).catch(()=>0),
+  rpc('get_law14_nonnap_public_unprotected',{}).catch(()=>[])
  ]);
  S.p=(p1||[]).filter(r=>r.alliance_code===S.a);S.v=(v||[]).filter(r=>r.alliance_code===S.a);S.x=(x||[]).filter(r=>r.alliance_code===S.a);
  S.e=e||[];S.o=o||[];S.t=(tr||[]).filter(r=>r.from_alliance===S.a||r.to_alliance===S.a);S.bans=bans||[];S.spend=spend||[];
  S.reviews=reviews||[];S.shared=shared||[];S.notificationReads=new Set((notificationReads||[]).map(r=>String(r.notification_id)));
- S.syncStatus=syncStatus||null;S.settings=settings?.[0]||null;S.level4Hosting=level4Hosting||[];S.napStats=napStats||[];S.sgWindow=sgWindow||null;S.performance=performance||null;S.supportUnread=Math.max(0,Number(supportUnread||0));
+ S.syncStatus=syncStatus||null;S.settings=settings?.[0]||null;S.level4Hosting=level4Hosting||[];S.napStats=napStats||[];S.sgWindow=sgWindow||null;S.performance=performance||null;S.supportUnread=Math.max(0,Number(supportUnread||0));S.law14NonNapPublic=Array.isArray(law14NonNapPublic)?law14NonNapPublic:[];
  window.NAP2_PLAYER_AVATARS=S.avatars;loadAvatars().catch(e=>console.warn('avatar load',e));
 }
 async function enter(expected){
@@ -407,7 +424,7 @@ async function boot(){
   showLoginRetry2(err);
  }
 }
-setTimeout(boot,0);setInterval(refreshSanctionTimerLabels2,30000);document.querySelector('#languagePicker')?.addEventListener('change',()=>setTimeout(()=>{if(S.a){decorate();renderHome();renderPlayers()}},0));
+setTimeout(boot,0);setInterval(refreshSanctionTimerLabels2,30000);setInterval(refreshLaw14NonNapTimers2,1000);document.querySelector('#languagePicker')?.addEventListener('change',()=>setTimeout(()=>{if(S.a){decorate();renderHome();renderPlayers()}},0));
 
 /* === LIVE HELPERS V2 === */
 const NAP_LOGO_CODES2=new Set(['NRW','THM','NWO','NwO','CWR','PxR']);
@@ -961,24 +978,80 @@ async function saveLawReport2(e,l){
 
 
 /* === CROWN + ACTIVITY + SETTINGS LIVE V2 === */
-async function renderCrownLive(){
- const v=document.getElementById('view-crown');if(!v)return;v.innerHTML='<div class="hero"><div><div class="kicker">CROWN · LIVE</div><h1>Minister-Ausschlüsse klar priorisiert.</h1><p>Nur die für Minister-Eignung notwendigen Informationen werden gezeigt.</p></div></div><div class="live-empty-state">Crown-Daten werden geladen …</div>';
+async function applyLaw14NonNapAction2(row,actionType){
+ if(isReadOnly2())return;
+ const words=law14NonNapWords2(),label=actionType==='warning'?words.warningButton:words.unprotectedButton;
+ const comment=prompt(words.commentPrompt,'')||'';
+ if(!confirm(label+' · '+(row.player_name||'')+'?'))return;
  try{
-  const d=await rpc('get_crown_dashboard',{});S.crown=d;const k=d?.king||{},rows=d?.restrictions||[],recent=d?.recently_ended||[];
+  await rpc('apply_law14_nonnap_action',{
+   p_player_id:row.player_id,
+   p_action_type:actionType,
+   p_trigger_source:row.trigger_source,
+   p_trigger_id:String(row.trigger_id||''),
+   p_comment:comment||null
+  });
+  await load();
+  await renderCrownLive();
+  renderHomeFull2();
+ }catch(err){alert(err.message||String(err))}
+}
+function law14NonNapWords2(){
+ const W={
+  de:{title:'Law 14 · Non-NAP Enforcement',sub:'Die Crown bearbeitet neue Non-NAP-Verstöße seit Inkrafttreten der Regel.',pending:'Law 14 · Handlungsbedarf',active:'Aktiv Unprotected',warning:'Spieler + R5 warnen',stage2:'7 Tage Unprotected setzen',warningButton:'Gewarnt',unprotectedButton:'7 Tage Unprotected',commentPrompt:'Optionaler Crown-Kommentar:',copyPlayer:'Spieler-Nachricht',copyR5:'R5-Nachricht',copied:'Kopiert',none:'Kein Law-14-Handlungsbedarf.',noneActive:'Keine aktiven Unprotected-Spieler.',until:'bis',resource:'Resource-Saving',rotation:'Event Rotation'},
+  en:{title:'Law 14 · Non-NAP Enforcement',sub:'The Crown handles new Non-NAP violations from the rule’s effective date onward.',pending:'Law 14 · Action required',active:'Active Unprotected',warning:'Warn player + R5',stage2:'Set 7 days Unprotected',warningButton:'Warned',unprotectedButton:'7 days Unprotected',commentPrompt:'Optional Crown comment:',copyPlayer:'Copy Player Message',copyR5:'Copy R5 Message',copied:'Copied',none:'No Law 14 action required.',noneActive:'No active Unprotected players.',until:'until',resource:'Resource-Saving',rotation:'Event Rotation'},
+  fr:{title:'Loi 14 · Application Non-NAP',sub:'La Crown traite les nouvelles infractions Non-NAP à partir de la date d’entrée en vigueur.',pending:'Loi 14 · Action requise',active:'Unprotected actifs',warning:'Avertir joueur + R5',stage2:'Appliquer 7 jours Unprotected',warningButton:'Averti',unprotectedButton:'7 jours Unprotected',commentPrompt:'Commentaire Crown facultatif :',copyPlayer:'Message joueur',copyR5:'Message R5',copied:'Copié',none:'Aucune action Loi 14 requise.',noneActive:'Aucun joueur Unprotected actif.',until:'jusqu’au',resource:'Économie de ressources',rotation:'Rotation événement'},
+  es:{title:'Ley 14 · Aplicación Non-NAP',sub:'La Crown gestiona las nuevas infracciones Non-NAP desde la entrada en vigor de la regla.',pending:'Ley 14 · Acción requerida',active:'Unprotected activos',warning:'Advertir jugador + R5',stage2:'Aplicar 7 días Unprotected',warningButton:'Advertido',unprotectedButton:'7 días Unprotected',commentPrompt:'Comentario opcional de Crown:',copyPlayer:'Mensaje jugador',copyR5:'Mensaje R5',copied:'Copiado',none:'No hay acciones de Ley 14 pendientes.',noneActive:'No hay jugadores Unprotected activos.',until:'hasta',resource:'Ahorro de recursos',rotation:'Rotación de eventos'}
+ };
+ return W[L()]||W.en;
+}
+function law14NonNapMessage2(row,recipient='player'){
+ const name=row.player_name||'Player',alliance=row.alliance_code||'Alliance',event=row.event_name||'the event',phase=row.phase_name?(' · '+row.phase_name):'';
+ const stage=Number(row.stage);
+ if(stage===1&&recipient==='r5'){
+  return 'Hello, we are informing you that '+name+' from '+alliance+' has received an official warning under NAP Law #14 regarding '+event+phase+'.\n\nNon-NAP players must respect the event-rotation and resource-saving rules in Law #14.\n\nAny further violation by this player results in a 7-day exception to the protection provided by Law #5.';
+ }
+ if(stage===1){
+  return 'Hello '+name+', this is an official warning under NAP Law #14 regarding '+event+phase+'.\n\nNon-NAP players must respect the event-rotation and resource-saving rules in Law #14. Please respect these rules going forward.\n\nAny further violation results in a 7-day exception to the protection provided by Law #5.';
+ }
+ if(recipient==='r5'){
+  return 'Hello, we are informing you that '+name+' from '+alliance+' has committed another violation under NAP Law #14 after receiving a previous warning.\n\nAs a result, a 7-day exception to the protection provided by Law #5 now applies to this player. If another violation occurs during those 7 days, the 7-day period restarts from that violation.\n\nThe previous warning remains on record.';
+ }
+ return 'Hello '+name+', another violation under NAP Law #14 has been recorded after your previous warning.\n\nAs a result, a 7-day exception to the protection provided by Law #5 now applies to you. If another violation occurs during those 7 days, the 7-day period restarts from that violation.\n\nYour previous warning remains on record.';
+}
+async function copyLaw14NonNapMessage2(row,button,recipient='player'){
+ const msg=law14NonNapMessage2(row,recipient),words=law14NonNapWords2(),normal=recipient==='r5'?words.copyR5:words.copyPlayer;
+ try{await navigator.clipboard.writeText(msg);button.textContent=words.copied;setTimeout(()=>button.textContent=normal,1400)}
+ catch{prompt('Copy message:',msg)}
+}
+async function renderCrownLive(){
+ const v=document.getElementById('view-crown');if(!v)return;const lw=law14NonNapWords2();
+ v.innerHTML='<div class="hero"><div><div class="kicker">CROWN · LIVE</div><h1>'+E(lw.title)+'</h1><p>'+E(lw.sub)+'</p></div></div><div class="live-empty-state">Crown-Daten werden geladen …</div>';
+ try{
+  const [d,n14]=await Promise.all([rpc('get_crown_dashboard',{}),rpc('get_law14_nonnap_dashboard',{})]);
+  S.crown=d;S.law14NonNap=n14;
+  const k=d?.king||n14?.king||{},rows=d?.restrictions||[],recent=d?.recently_ended||[],pending=n14?.pending||[],active=n14?.active_unprotected||[];
   const crownLang2={
-   de:{privacy:'Hier wird nur angezeigt, ob Spieler laut Law 14 Ministerposten übernehmen dürfen. Private Verstoßdetails bleiben bei ihrer Allianz.',locked:'Die aktiven Minister-Sperren sieht nur die derzeitige Königsallianz. Diese Ansicht zeigt nur, wo Crown liegt – keine fremden Akten.',title:'Minister-Sperren nach Law 14'},
-   en:{privacy:'Only minister eligibility under Law 14 is shown; violation details remain private to each alliance.',locked:'Only the current king alliance can see active minister restrictions. No other alliance files are shown.',title:'Law 14 minister restrictions'},
-   fr:{privacy:'Seule l’éligibilité aux postes de ministre selon la loi 14 est affichée ; les infractions restent privées.',locked:'Seule l’alliance du roi peut voir les restrictions actives. Aucun dossier d’autre alliance n’est affiché.',title:'Restrictions ministérielles – loi 14'},
-   es:{privacy:'Solo se muestra la elegibilidad ministerial según la ley 14; las infracciones siguen siendo privadas.',locked:'Solo la alianza del rey puede ver las restricciones activas. No se muestran expedientes ajenos.',title:'Restricciones ministeriales – ley 14'}
-  }[L()]||{privacy:'Nur der Ministerstatus wird gezeigt.',locked:'Nur die Königsallianz hat Zugriff.',title:'Minister-Sperren nach Law 14'};
-  v.innerHTML='<div class="hero"><div><div class="kicker">CROWN · LIVE</div><h1>'+E(crownLang2.title)+'</h1><p>'+E(crownLang2.privacy)+'</p></div><div class="hero-actions"><span class="pill gold">Königsallianz · '+E(k.alliance_code||'–')+'</span></div></div>'+
-   (d?.has_access?'<div class="live-stat-grid"><div class="live-stat"><b>'+rows.length+'</b><small>aktive Minister-Sperren</small></div><div class="live-stat"><b>'+recent.length+'</b><small>beendet · 24h</small></div>'+(k.name?'<div class="live-stat"><b>'+E(k.name)+'</b><small>König</small></div>':'')+'<div class="live-stat"><b>'+E(D(k.refreshed_at))+'</b><small>aktualisiert</small></div></div>':'<div class="live-stat-grid"><div class="live-stat"><b>'+E(k.alliance_code||'–')+'</b><small>Königsallianz</small></div>'+(k.name?'<div class="live-stat"><b>'+E(k.name)+'</b><small>König</small></div>':'')+'<div class="live-stat"><b>'+E(D(k.refreshed_at))+'</b><small>aktualisiert</small></div></div>')+
-   (!d?.has_access?'<div class="live-empty-state">'+E(crownLang2.locked)+'</div>':
-   '<div class="live-panel-grid"><section class="card"><div class="card-head"><div><div class="card-title">Aktive Minister-Sperren</div><div class="card-sub">Law 14 · minimale Crown-Information</div></div><span class="pill red">'+rows.length+'</span></div><div class="card-body live-list">'+
+   de:{privacy:'Law-14-Minister-Sperren bleiben getrennt. Der Non-NAP-Bereich zeigt nur neue Fälle ab Inkrafttreten; Altbestand bleibt in den Spielerakten und zählt nicht als Warning.',locked:'Nur die aktuell zugewiesene Crown-Allianz kann Maßnahmen bearbeiten und aktive Minister-Sperren sehen.',minister:'Minister-Sperren nach Law 14'},
+   en:{privacy:'Law 14 minister restrictions remain separate. The Non-NAP section shows only new cases from the effective date onward; historical cases stay in player files and do not count as warnings.',locked:'Only the currently assigned Crown alliance can manage actions and view active minister restrictions.',minister:'Law 14 minister restrictions'},
+   fr:{privacy:'Les restrictions ministérielles restent séparées. Seuls les nouveaux cas après l’entrée en vigueur apparaissent ici ; les anciens cas restent dans les dossiers et ne comptent pas comme avertissement.',locked:'Seule l’alliance Crown actuellement attribuée peut gérer les actions.',minister:'Restrictions ministérielles – loi 14'},
+   es:{privacy:'Las restricciones ministeriales siguen separadas. Aquí solo aparecen casos nuevos desde la entrada en vigor; los casos históricos permanecen en los expedientes y no cuentan como advertencia.',locked:'Solo la alianza Crown asignada actualmente puede gestionar acciones.',minister:'Restricciones ministeriales – Ley 14'}
+  }[L()]||{};
+  v.innerHTML='<div class="hero"><div><div class="kicker">CROWN · LIVE</div><h1>'+E(lw.title)+'</h1><p>'+E(crownLang2.privacy||lw.sub)+'</p></div><div class="hero-actions"><span class="pill gold">Crown · '+E(k.alliance_code||'–')+'</span></div></div>'+
+   (!n14?.has_access?'<div class="live-empty-state">'+E(crownLang2.locked||'No access')+'</div>':
+   '<div class="live-stat-grid"><div class="live-stat"><b>'+pending.length+'</b><small>'+E(lw.pending)+'</small></div><div class="live-stat"><b>'+active.length+'</b><small>'+E(lw.active)+'</small></div><div class="live-stat"><b>'+rows.length+'</b><small>'+E(crownLang2.minister||'Law 14')+'</small></div>'+(k.name?'<div class="live-stat"><b>'+E(k.name)+'</b><small>König</small></div>':'')+'</div>'+
+   '<details class="card law14-nonnap-crown-panel" open><summary class="card-head"><div><div class="card-title">'+E(lw.pending)+'</div><div class="card-sub">Stage 1 = '+E(lw.warning)+' · Stage 2 = '+E(lw.stage2)+'</div></div><span class="pill red">'+pending.length+'</span></summary><div class="card-body live-list">'+
+   (pending.length?pending.map(x=>'<div class="live-row" style="align-items:flex-start"><div style="min-width:0"><b>'+E(x.player_name||'–')+'</b><small>'+E(x.alliance_code||'')+(x.player_game_id?' · ID '+E(x.player_game_id):'')+'</small><small>'+E(x.event_name||'Law 14')+(x.phase_name?' · '+E(x.phase_name):'')+' · '+E(D(x.occurred_at))+'</small></div><div style="text-align:right"><div class="hero-actions"><span class="pill '+(Number(x.stage)===2?'red':'gold')+'">Stage '+E(x.stage)+'</span><span class="pill">'+E(x.trigger_source==='law14_nonnap_report'?lw.rotation:lw.resource)+'</span></div><div class="hero-actions" style="margin-top:8px"><button class="btn small secondary law14-nonnap-copy" data-id="'+E(x.trigger_id)+'" data-recipient="player">'+E(lw.copyPlayer)+'</button><button class="btn small secondary law14-nonnap-copy" data-id="'+E(x.trigger_id)+'" data-recipient="r5">'+E(lw.copyR5)+'</button><button class="btn small primary law14-nonnap-apply" data-id="'+E(x.trigger_id)+'" data-action="'+(Number(x.stage)===1?'warning':'unprotected')+'">'+E(Number(x.stage)===1?lw.warningButton:lw.unprotectedButton)+'</button></div></div></div>').join(''):'<div class="live-empty-state">✓ '+E(lw.none)+'</div>')+
+   '<section style="margin-top:18px"><div class="card-head"><div><div class="card-title">'+E(lw.active)+'</div></div><span class="pill red">'+active.length+'</span></div><div class="card-body live-list">'+
+   (active.length?active.map(x=>'<div class="live-row"><div><b>'+E(x.player_name||'–')+'</b><small>'+E(x.alliance_code||'')+(x.comment?' · '+E(x.comment):'')+'</small></div><div style="text-align:right"><div style="display:flex;align-items:center;justify-content:flex-end;gap:8px"><strong data-law14-nonnap-timer-end="'+E(x.end_at)+'">'+E(law14NonNapTimer2(x.end_at))+'</strong><span class="pill red">Unprotected</span></div><small>'+E(lw.until)+' '+E(D(x.end_at))+'</small></div></div>').join(''):'<div class="live-empty-state">'+E(lw.noneActive)+'</div>')+
+   '</div></section></div></details>'+
+   '<div class="live-panel-grid"><section class="card"><div class="card-head"><div><div class="card-title">'+E(crownLang2.minister||'Law 14')+'</div></div><span class="pill gold">'+rows.length+'</span></div><div class="card-body live-list">'+
    (rows.length?rows.map(x=>'<div class="live-row"><div><b>'+E(x.player_name||'–')+'</b><small>'+E(x.alliance_code||'')+(x.player_game_id?' · ID '+E(x.player_game_id):'')+'</small></div><div style="text-align:right"><span class="pill '+(Number(x.level)>=3?'red':'gold')+'">Stufe '+E(x.level)+'</span><small>'+E(x.end_at?D(x.end_at):'ohne Endzeit')+'</small></div></div>').join(''):'<div class="live-empty-state">Keine aktiven Minister-Sperren.</div>')+
    '</div></section><section class="card"><div class="card-head"><div><div class="card-title">Beendet · letzte 24h</div></div></div><div class="card-body live-list">'+
    (recent.length?recent.map(x=>'<div class="live-row"><div><b>'+E(x.player_name||'–')+'</b><small>'+E(x.alliance_code||'')+' · Stufe '+E(x.level)+'</small></div><span class="pill green">'+E(D(x.ended_at))+'</span></div>').join(''):'<div class="live-empty-state">Keine kürzlich beendeten Maßnahmen.</div>')+
    '</div></section></div>');
+  v.querySelectorAll('.law14-nonnap-apply').forEach(b=>b.onclick=()=>{const row=pending.find(x=>String(x.trigger_id)===String(b.dataset.id));if(row)applyLaw14NonNapAction2(row,b.dataset.action)});
+  v.querySelectorAll('.law14-nonnap-copy').forEach(b=>b.onclick=()=>{const row=pending.find(x=>String(x.trigger_id)===String(b.dataset.id));if(row)copyLaw14NonNapMessage2(row,b,b.dataset.recipient||'player')});
  }catch(err){v.innerHTML+='<div class="live-empty-state">'+E(err.message||String(err))+'</div>'}
 }
 let activityType2='all',activityAlliance2='all',activityOffset2=0,activityMore2=false,activityLoading2=false,activityAlliances2=[];
@@ -2008,6 +2081,7 @@ function renderHomeFull2(){
  const v=document.getElementById('view-home');if(!v)return;const A=actions(),recent=S.v.slice(0,8),timers=activeOwnTimers2(),tw=timerViewWords2();
  v.innerHTML='<div class="hero"><div><div class="kicker">Kingdom 1044 · '+E(S.a)+'</div><h1>Dein NAP-Lagebild auf einen Blick.</h1><p>Eigene Maßnahmen, NAP-weite Hinweise und relevante Allianzwechsel – sauber nach Zuständigkeit getrennt.</p></div><div class="home-hero-tools"><div class="hero-actions"><button class="btn primary" data-go="add">＋ Verstoß eintragen</button><button class="btn secondary" data-go="players">Spielerakten</button></div>'+homeSyncBadge2()+'</div></div>'+
  homeV2PriorityPanels2(A)+
+ (S.law14NonNapPublic.length?'<section class="card law14-nonnap-home-panel"><div class="card-head"><div><div class="card-title">Active Unprotected Players</div><div class="card-sub">Law 14 · Protection is restored automatically after 7 days unless a new violation restarts the period</div></div><span class="pill red">'+S.law14NonNapPublic.length+'</span></div><div class="card-body live-list">'+S.law14NonNapPublic.map(x=>'<div class="live-row"><div><b>'+E(x.player_name||'–')+'</b><small>'+E(x.alliance_code||'')+(x.player_game_id?' · ID '+E(x.player_game_id):'')+(x.comment?' · '+E(x.comment):'')+'</small></div><div class="home-timer-right"><span class="pill red">Unprotected</span><strong data-law14-nonnap-timer-end="'+E(x.end_at)+'">'+E(law14NonNapTimer2(x.end_at))+'</strong></div></div>').join('')+'</div></section>':'')+
  '<div class="grid stat-grid home-kpis"><div class="stat-card"><div class="stat-top"><span>Eigene offene Maßnahmen</span></div><div class="stat-value">'+A.length+'</div><div class="stat-sub">'+E(S.a)+'</div></div><div class="stat-card"><div class="stat-top"><span>NAP-weit überfällig*</span></div><div class="stat-value">'+S.o.length+'</div><div class="stat-sub">*laut Tracker · 24h-Frist</div></div><div class="stat-card"><div class="stat-top"><span>Aktive NAP OUT</span></div><div class="stat-value">'+S.e.length+'</div><div class="stat-sub">NAP-weit</div></div><div class="stat-card"><div class="stat-top"><span>Allianzwechsel</span></div><div class="stat-value">'+S.t.length+'</div><div class="stat-sub">nur '+E(S.a)+' betreffend</div></div></div>'+
  '<div class="home-main-grid"><div class="stack">'+
  (S.reviews.length?'<section class="card post-contact-review-panel"><div class="card-head"><div><div class="card-title">'+E(postContactReviewText2('section'))+'</div><div class="card-sub">'+E(postContactReviewText2('sectionSub'))+'</div></div><span class="pill gold">'+S.reviews.length+' '+E(postContactReviewText2('openSuffix'))+'</span></div><div class="card-body">'+S.reviews.map(postContactReviewCard2).join('')+'</div></section>':'')+
