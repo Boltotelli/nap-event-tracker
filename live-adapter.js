@@ -819,6 +819,12 @@ async function renderKvkLive(){
    '</div></section><section class="card"><div class="card-head"><div><div class="card-title">Snapshot / Baseline</div><div class="card-sub">'+E(cycle.baseline_locked?'eingefroren':'noch offen')+'</div></div></div><div class="card-body live-list">'+
    (base.length?base.map(r=>'<div class="live-row"><div><b>'+E(r.alliance_code)+'</b><small>'+E(D(r.captured_at))+'</small></div><div style="text-align:right"><strong>'+N(r.alliance_power)+'</strong><small>'+N(r.member_count)+' Mitglieder</small></div></div>').join(''):'<div class="live-empty-state">Noch kein Snapshot.</div>')+
    '</div></section></div>'+
+   (cycle.baseline_locked&&base.length&&S.a==='NRW'
+    ?'<section class="card" style="margin-top:14px"><div class="card-head"><div><div class="card-title">Snapshot-Korrektur · NRW</div><div class="card-sub">Eingefrorene Kraft und Mitgliederzahl korrigieren. Der ursprüngliche Snapshot-Zeitpunkt bleibt erhalten.</div></div><span class="pill gold">Audit-Log</span></div><div class="card-body live-list">'+
+      base.map(r=>'<form class="live-row live-law9-baseline-correction" data-code="'+E(r.alliance_code)+'"><div><b>'+E(r.alliance_code)+'</b><small>Snapshot '+E(D(r.captured_at))+'</small></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label style="display:flex;gap:6px;align-items:center"><small>Kraft</small><input data-power style="width:145px" inputmode="numeric" value="'+E(Math.trunc(Number(r.alliance_power||0)))+'" '+(isReadOnly2()?'disabled':'')+'></label><label style="display:flex;gap:6px;align-items:center"><small>Mitglieder</small><input data-members style="width:90px" inputmode="numeric" value="'+E(r.member_count||'')+'" '+(isReadOnly2()?'disabled':'')+'></label><button class="btn small secondary" '+(isReadOnly2()?'disabled':'')+'>Korrigieren</button></div></form>').join('')+
+      (isReadOnly2()?'<div class="live-note"><b>Nur Lesen</b> · Für Korrekturen bitte mit dem NRW-Write-Login anmelden.</div>':'')+
+     '</div></section>'
+    :'')+
    '<section class="card" style="margin-top:14px"><div class="card-head"><div><div class="card-title">Mitgliederplaner</div><div class="card-sub">Tracker-Zahl prüfen und vor dem Snapshot bei Bedarf korrigieren.</div></div><span class="pill '+(cycle.baseline_locked?'green':'gold')+'">'+E(cycle.baseline_locked?'Snapshot eingefroren':'noch editierbar')+'</span></div><div class="card-body live-list">'+
    (memberPlan.length?memberPlan.map(r=>'<form class="live-row live-member-plan" data-code="'+E(r.alliance_code)+'"><div><b>'+E(r.alliance_code)+'</b><small>Tracker '+N(r.tracker_member_count)+' · '+(r.overridden?'manuell überschrieben':'kein Override')+(r.frozen_member_count!=null?' · eingefroren '+N(r.frozen_member_count):'')+'</small></div><input style="width:100px" inputmode="numeric" value="'+E(r.effective_member_count??r.tracker_member_count??'')+'" '+(!canEditMembers||cycle.baseline_locked?'disabled':'')+'><button class="btn small secondary" '+(!canEditMembers||cycle.baseline_locked?'disabled':'')+'>Speichern</button></form>').join(''):'<div class="live-empty-state">Kein Mitgliederplan vorhanden.</div>')+
    '</div></section>'+
@@ -826,7 +832,7 @@ async function renderKvkLive(){
    ranking.map(r=>'<form class="live-row live-prep-score" data-code="'+E(r.alliance_code)+'"><div><b>'+E(r.alliance_code)+'</b><small>'+N(r.member_count)+' Mitglieder</small></div><input style="width:150px" inputmode="numeric" value="'+E(r.prep_score??'')+'" '+(cycle.score_entry_open&&!isReadOnly2()?'':'disabled')+'><button class="btn small primary" '+(cycle.score_entry_open&&!isReadOnly2()?'':'disabled')+'>Speichern</button></form>').join('')+
    '</div></div></section><div id="liveKvkTop" style="margin-top:14px"></div>';
   const cycleSelect=document.getElementById('liveLaw9Cycle');if(cycleSelect)cycleSelect.onchange=()=>{law9SelectedCycle2=cycleSelect.value;renderKvkLive()};
-  v.querySelectorAll('.live-member-plan').forEach(form=>form.onsubmit=saveMemberPlan2);v.querySelectorAll('.live-prep-score').forEach(form=>form.onsubmit=savePrepScore2);
+  v.querySelectorAll('.live-member-plan').forEach(form=>form.onsubmit=saveMemberPlan2);v.querySelectorAll('.live-prep-score').forEach(form=>form.onsubmit=savePrepScore2);v.querySelectorAll('.live-law9-baseline-correction').forEach(form=>form.onsubmit=saveLaw9BaselineCorrection2);
   if(perf?.kvk?.event?.id)loadKvkTop2(perf.kvk.event.id);
  }catch(err){v.innerHTML+='<div class="live-empty-state">'+E(err.message||String(err))+'</div>'}
 }
@@ -834,6 +840,18 @@ async function saveMemberPlan2(e){
  e.preventDefault();if(isReadOnly2())return;const form=e.currentTarget,count=Number(String(form.querySelector('input').value||'').replace(/\D/g,''));
  if(!Number.isInteger(count)||count<0||count>200){alert(actionWord2('memberCountCheck'));return}
  try{await rpc('set_law9_member_override',{p_cycle_id:S.law9.cycle.id,p_alliance_code:form.dataset.code,p_member_count:count});await renderKvkLive()}catch(err){alert(err.message||String(err))}
+}
+async function saveLaw9BaselineCorrection2(e){
+ e.preventDefault();if(isReadOnly2()||S.a!=='NRW')return;
+ const form=e.currentTarget;
+ const power=Number(String(form.querySelector('[data-power]')?.value||'').replace(/\D/g,''));
+ const members=Number(String(form.querySelector('[data-members]')?.value||'').replace(/\D/g,''));
+ if(!Number.isFinite(power)||power<=0){alert('Bitte eine gültige Allianz-Kraft eingeben.');return}
+ if(!Number.isInteger(members)||members<1||members>100){alert('Mitgliederzahl muss zwischen 1 und 100 liegen.');return}
+ try{
+  await rpc('correct_law9_baseline',{p_cycle_id:S.law9.cycle.id,p_alliance_code:form.dataset.code,p_alliance_power:power,p_member_count:members});
+  await renderKvkLive();
+ }catch(err){alert(err.message||String(err))}
 }
 async function savePrepScore2(e){
  e.preventDefault();if(isReadOnly2())return;const form=e.currentTarget,score=Number(String(form.querySelector('input').value||'').replace(/\D/g,''));try{await rpc('upsert_law9_prep_score',{p_cycle_id:S.law9.cycle.id,p_alliance_code:form.dataset.code,p_prep_score:score});await renderKvkLive()}catch(err){alert(err.message||String(err))}
@@ -1085,7 +1103,9 @@ async function renderSettingsLive(){
  const v=document.getElementById('view-settings');if(!v)return;let opts=[];try{opts=await rpc('get_open_event_entry_options',{})||[]}catch{}S.eventOptions=opts;
  let features=null;try{features=await rpc('get_performance_feature_settings',{})}catch{}S.features=features;
  const s=S.settings||{},over=s.manual_event_entry_overrides||{},events=['Strongest Governor','Alliance Brawl','Officer Project','Armament Competition','Swordland Showdown','Tri-Alliance Clash'];
+  const readOnlyNotice=isReadOnly2()?'<div class="live-note" style="margin-bottom:14px"><b>Nur Lesen</b> · Änderungen sind mit dem Write-Login möglich.</div>':'';
   v.innerHTML='<div class="hero"><div><div class="kicker">EINSTELLUNGEN · LIVE</div><h1>Konfiguration getrennt von den Laws.</h1><p>Warnfenster, Event-Verfügbarkeit und Performance.</p></div></div>'+
+  readOnlyNotice+
   '<div class="live-tabs"><button class="live-tab active" data-settab="general">Allgemein</button><button class="live-tab" data-settab="events">Event-Verfügbarkeit</button><button class="live-tab" data-settab="performance">Performance</button></div>'+
   '<div id="liveSettingsGeneral"><div class="live-panel-grid"><section class="card"><div class="card-head"><div><div class="card-title">Verstoß-Fenster</div></div></div><div class="card-body"><form id="liveSettingsForm" class="live-form"><div class="live-form-row"><label>Warnfenster · Tage<input id="liveWarnDays" type="number" min="1" value="'+E(s.warning_window_days||7)+'"></label></div><div class="live-note">Verstöße bleiben serverweit fest 28 Tage gültig. Diese Dauer kann nicht mehr pro Allianz geändert werden.</div><button class="btn primary">Speichern</button><div id="liveSettingsStatus" class="live-status"></div></form></div></section><section class="card"><div class="card-head"><div><div class="card-title">Allianz</div></div></div><div class="card-body"><div class="live-stat"><b>'+E(S.a)+'</b><small>eingeloggte Allianz</small></div></div></section></div></div>'+
  '<div id="liveSettingsEvents" hidden><section class="card"><div class="card-head"><div><div class="card-title">Event-Verfügbarkeit</div><div class="card-sub">Automatische Fenster plus manuelle Freigabe.</div></div></div><div class="card-body live-list">'+events.map(ev=>{const auto=opts.some(x=>x.event_name===ev),always=ev==='Swordland Showdown'||ev==='Tri-Alliance Clash',manual=over[ev]===true;return '<div class="live-row"><div><b>'+E(ev)+'</b><small>'+(always?'immer offen':auto?'automatisch offen':manual?'manuell offen':'geschlossen')+'</small></div>'+(always?'<span class="pill blue">immer</span>':'<button class="btn small secondary live-event-override" data-event="'+E(ev)+'" data-enabled="'+(manual?'1':'0')+'">'+(manual?'Freigabe entfernen':'manuell aktivieren')+'</button>')+'</div>'}).join('')+'</div></section></div>'+
