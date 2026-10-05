@@ -41,6 +41,8 @@ That branch includes newer OCR/video compatibility work and must become `develop
 - ScreenImporter evidence/update logic must reuse existing violations/cases and avoid duplicates.
 - Times shown in the app should use UTC.
 - Support is privacy-scoped; alliance users must not gain access to another alliance's private case details.
+- Law 14 is now **Event Spending** with sections 14.1–14.4. 14.1 keeps the >3× non-KvK spending rule and exceptions; 14.2 keeps the progressive stage 1–4 penalties; 14.3 covers Non-NAP players (first violation: warning to player + R5; further violation: 7 days without Law #5 protection, enforced by the current king's alliance); 14.4 incorporates the Strongest Governor nomination rotation. Laws 14A and 15 are retired/inactive.
+- Transfer workflow: POOL/non-NAP → NAP transfers may be accepted immediately by the destination NAP alliance because the source has no app access. The 72-hour observation window remains visible as safety context but no longer blocks manual acceptance. Reject/temporary remains available. Normal NAP → NAP transfers keep the existing source/destination authorization workflow. Transfer UI labels follow the selected DE/EN/FR/ES language.
 
 ## Infrastructure boundary
 
@@ -79,25 +81,8 @@ The unfinished OCR / Performance / AM work is preserved on `feature/ocr-performa
 Do not remove preserved feature work or shared Supabase runtime components merely as repository cleanup. Review runtime dependencies separately.
 
 
-## Test-only Law 15 experiment — 2026-10-03
-
-The `develop` / GitHub Pages test build contains a Law 15 enforcement prototype. Production `main` is unchanged.
-
-Draft tested in the UI:
-`Law #15 – Event Rotation & Resource-Saving Enforcement`
-
-- Non-NAP players remain in the tracked kingdom roster.
-- Crown shows tracked Non-NAP players requiring a Law 15 action.
-- Stage 1: King alliance records **Warned**; the warning stays on record.
-- Stage 2: any later qualifying violation can be set to **7 days Unprotected**.
-- Active Law 15 Unprotected players are visible NAP-wide on HOME with an automatic countdown.
-- Optional King comments are stored with the action.
-- The initial player/R5 message is intentionally treated as a draft and can be refined before production promotion.
-
-Backend isolation:
-- `public.law15_actions_test`
-- `get_law15_dashboard_test()`
-- `apply_law15_action_test(...)`
-- `get_law15_public_unprotected_test()`
-
-These objects exist in the shared Supabase project but are test-specific and are not referenced by production `main`. Do not promote or rename them until the workflow and wording are approved.
+### 2026-10-05 · Law 14 Non-NAP enforcement live
+- Crown handles new Non-NAP Law-14 cases from the stored effective date onward; older cases remain in player files and do not count as warnings.
+- First new case: warning player + R5. Any later case: 7-day Law-5 protection exception.
+- A new violation during an active 7-day period restarts the period from 7 days; only one active timer remains.
+- Active Unprotected players are NAP-wide visible on Home; Crown shows action queue and active timer.
