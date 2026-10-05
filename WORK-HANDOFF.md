@@ -79,3 +79,10 @@ The unfinished OCR / Performance / AM work is preserved on `feature/ocr-performa
 - `feature/ocr-performance-v16`: unfinished OCR/performance work intentionally preserved and not part of the production baseline.
 
 Do not remove preserved feature work or shared Supabase runtime components merely as repository cleanup. Review runtime dependencies separately.
+
+
+### 2026-10-05 · Law 14 Non-NAP enforcement live
+- Crown handles new Non-NAP Law-14 cases from the stored effective date onward; older cases remain in player files and do not count as warnings.
+- First new case: warning player + R5. Any later case: 7-day Law-5 protection exception.
+- A new violation during an active 7-day period restarts the period from 7 days; only one active timer remains.
+- Active Unprotected players are NAP-wide visible on Home; Crown shows action queue and active timer.
