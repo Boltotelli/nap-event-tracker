@@ -263,7 +263,15 @@ const TIMER_VIEW_WORDS2={
  es:{title:'Temporizadores de sanción activos',sub:'Temporizadores R1 y NAP OUT activos de tu alianza.',level:'Nivel',remaining:'Tiempo restante',ends:'Fin',open:'Abrir jugador',timer:'Temporizador'}
 };
 function timerViewWords2(){return TIMER_VIEW_WORDS2[L()]||TIMER_VIEW_WORDS2.de}
-function timerRemaining2(end){const ms=new Date(end).getTime()-Date.now(),w=SANCTION_STATUS_WORDS2[L()]||SANCTION_STATUS_WORDS2.de;return Number.isFinite(ms)&&ms>0?dur(ms):w.expired}
+function timerRemaining2(end){
+ const ms=new Date(end).getTime()-Date.now(),w=SANCTION_STATUS_WORDS2[L()]||SANCTION_STATUS_WORDS2.de;
+ if(!Number.isFinite(ms)||ms<=0)return w.expired;
+ const totalMinutes=Math.floor(ms/60000);
+ const days=Math.floor(totalMinutes/1440);
+ const hours=Math.floor((totalMinutes%1440)/60);
+ const minutes=totalMinutes%60;
+ return String(days).padStart(2,'0')+':'+String(hours).padStart(2,'0')+':'+String(minutes).padStart(2,'0');
+}
 function activeOwnTimers2(){return [...new Set((S.x||[]).map(s=>s.player_name).filter(Boolean))].map(name=>sanctionState2(name).currentSanction).filter(s=>{if(!s?.end_at||Number(s.level)<2)return false;const v=(S.v||[]).find(v=>String(v.id)===String(s.violation_id));return sanctionStatus2(s,v).key==='active'}).sort((a,b)=>new Date(a.end_at)-new Date(b.end_at))}
 function refreshSanctionTimerLabels2(){document.querySelectorAll('[data-timer-end]').forEach(el=>{const end=el.getAttribute('data-timer-end');if(end)el.textContent=timerRemaining2(end)})}
 function actions(){
@@ -992,7 +1000,7 @@ async function renderCrownLive(){
    '<details class="card law15-crown-panel law15-collapse" open><summary class="card-head law15-collapse-summary"><div><div class="card-title">'+E(lw.pending)+'</div><div class="card-sub">Stage 1 = '+E(lw.warning)+' · Stage 2 = '+E(lw.stage2)+'</div></div><div class="hero-actions"><span class="pill red">'+pending.length+'</span><span class="law15-chevron">⌄</span></div></summary><div class="law15-collapse-body"><div class="card-body live-list">'+
    (pending.length?pending.map(x=>'<div class="law15-action-card"><div class="law15-action-main"><div><b>'+E(x.player_name||'–')+'</b><small>'+E(x.alliance_code||'')+(x.player_game_id?' · ID '+E(x.player_game_id):'')+'</small></div><div class="hero-actions"><span class="pill '+(Number(x.stage)===2?'red':'gold')+'">Stage '+E(x.stage)+'</span><span class="pill">'+E(x.trigger_source==='law15_report'?lw.rotation:lw.resource)+'</span></div></div><div class="law15-action-meta"><span>'+E(x.event_name||'Law 14')+(x.phase_name?' · '+E(x.phase_name):'')+'</span><span>'+E(D(x.occurred_at))+'</span></div><div class="law15-action-buttons"><button class="btn small secondary law15-copy" data-id="'+E(x.trigger_id)+'" data-recipient="player">'+E(lw.copyPlayer)+'</button><button class="btn small secondary law15-copy" data-id="'+E(x.trigger_id)+'" data-recipient="r5">'+E(lw.copyR5)+'</button><button class="btn small primary law15-apply" data-id="'+E(x.trigger_id)+'" data-action="'+(Number(x.stage)===1?'warning':'unprotected')+'">'+E(Number(x.stage)===1?lw.warningButton:lw.unprotectedButton)+'</button></div></div>').join(''):'<div class="live-empty-state">✓ '+E(lw.none)+'</div>')+
    '</div><section class="law15-active-block"><div class="card-head"><div><div class="card-title">'+E(lw.active)+'</div></div><span class="pill red">'+active.length+'</span></div><div class="card-body live-list">'+
-   (active.length?active.map(x=>'<div class="live-row"><div><b>'+E(x.player_name||'–')+'</b><small>'+E(x.alliance_code||'')+(x.comment?' · '+E(x.comment):'')+'</small></div><div style="text-align:right"><span class="pill red">Unprotected</span><small>'+E(lw.until)+' '+E(D(x.end_at))+'</small></div></div>').join(''):'<div class="live-empty-state">'+E(lw.noneActive)+'</div>')+
+   (active.length?active.map(x=>'<div class="live-row"><div><b>'+E(x.player_name||'–')+'</b><small>'+E(x.alliance_code||'')+(x.comment?' · '+E(x.comment):'')+'</small></div><div style="text-align:right"><span class="pill red">Unprotected</span><strong data-timer-end="'+E(x.end_at)+'">'+E(timerRemaining2(x.end_at))+'</strong><small>'+E(lw.until)+' '+E(D(x.end_at))+'</small></div></div>').join(''):'<div class="live-empty-state">'+E(lw.noneActive)+'</div>')+
    '</div></section></div></details>'+
    '<div class="live-panel-grid"><section class="card"><div class="card-head"><div><div class="card-title">'+E(crownLang2.minister||'Law 14')+'</div></div><span class="pill gold">'+rows.length+'</span></div><div class="card-body live-list">'+
    (rows.length?rows.map(x=>'<div class="live-row"><div><b>'+E(x.player_name||'–')+'</b><small>'+E(x.alliance_code||'')+(x.player_game_id?' · ID '+E(x.player_game_id):'')+'</small></div><div style="text-align:right"><span class="pill '+(Number(x.level)>=3?'red':'gold')+'">Stufe '+E(x.level)+'</span><small>'+E(x.end_at?D(x.end_at):'ohne Endzeit')+'</small></div></div>').join(''):'<div class="live-empty-state">Keine aktiven Minister-Sperren.</div>')+
