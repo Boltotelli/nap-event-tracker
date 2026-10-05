@@ -153,12 +153,13 @@ function login(){
  d.id='n2login';d.className='n2login';
  const eye='<svg class="n2access-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path class="n2eye-open" d="M2.7 12s3.4-5.2 9.3-5.2S21.3 12 21.3 12 17.9 17.2 12 17.2 2.7 12 2.7 12Z" stroke="currentColor" stroke-width="1.8"/><circle class="n2eye-open" cx="12" cy="12" r="2.4" stroke="currentColor" stroke-width="1.8"/><path class="n2eye-closed" d="M3.1 12.7c2.1-2.3 5.1-3.5 8.9-3.5s6.8 1.2 8.9 3.5M7 10.3l-1.4-2M12 9.2V6.8M17 10.3l1.4-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
  const pen='<svg class="n2access-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5.2 15.8 4.5 19.5l3.7-.7L18.5 8.5 15.5 5.5 5.2 15.8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m14.9 6.1 3 3" stroke="currentColor" stroke-width="1.8"/><path class="n2pen-line" d="M3.8 21c4.4-.9 9.7.8 16.4-.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
- d.innerHTML=`<div class="n2box"><div class="kicker">NAP Event Tracker 2.0</div><h2>Kingdom 1044</h2><p>${E(t('hint'))}</p><form class="n2grid" id="n2form"><label>${E(t('alliance'))}<select id="n2a" class="n2alliance-select" tabindex="-1" aria-hidden="true"><option>NRW</option><option>THM</option><option>NWO</option><option>NwO</option><option>CWR</option><option>PxR</option></select></label><div class="n2alliance-grid" role="group" aria-label="${E(t('alliance'))}">${['NRW','THM','NWO','NwO','CWR','PxR'].map(a=>`<button type="button" class="n2alliance-choice ${a==='NRW'?'active':''}" data-login-alliance="${a}" aria-pressed="${a==='NRW'}">${a}</button>`).join('')}</div><div class="n2access-wrap"><span class="n2access-label">${E(w.access)}</span><div class="n2access-switch" id="n2accessSwitch" data-mode="${E(loginMode2)}" role="group" aria-label="${E(w.access)}"><button class="n2access-option ${loginMode2==='read'?'active':''}" type="button" data-access="read" aria-pressed="${loginMode2==='read'}">${eye}<span>${E(w.read)}</span></button><button class="n2access-option ${loginMode2==='write'?'active':''}" type="button" data-access="write" aria-pressed="${loginMode2==='write'}">${pen}<span>${E(w.write)}</span></button></div><div class="n2access-hint" id="n2accessHint">${E(loginMode2==='read'?w.readHint:w.writeHint)}</div></div><label>${E(t('password'))}<input id="n2p" type="password" required autocomplete="current-password"></label><div id="n2e" class="n2err"></div><button class="btn primary" type="submit">${E(t('login'))}</button><button class="btn secondary" type="button" id="n2retry" hidden>${E(actionWord2('retry'))}</button></form></div>`;
+ d.innerHTML=`<div class="n2box"><div class="kicker">NAP Event Tracker 2.0</div><h2>Kingdom 1044</h2><p>${E(t('hint'))}</p><form class="n2grid" id="n2form"><label>${E(t('alliance'))}<select id="n2a" class="n2alliance-select notranslate" translate="no" tabindex="-1" aria-hidden="true"><option>NRW</option><option>THM</option><option>NWO</option><option>NwO</option><option>CWR</option><option>PxR</option></select></label><div class="n2alliance-grid" role="group" aria-label="${E(t('alliance'))}">${['NRW','THM','NWO','NwO','CWR','PxR'].map(a=>`<button type="button" class="n2alliance-choice notranslate ${a==='NRW'?'active':''}" translate="no" data-login-alliance="${a}" aria-pressed="${a==='NRW'}">${a}</button>`).join('')}</div><div class="n2access-wrap"><span class="n2access-label">${E(w.access)}</span><div class="n2access-switch" id="n2accessSwitch" data-mode="${E(loginMode2)}" role="group" aria-label="${E(w.access)}"><button class="n2access-option notranslate ${loginMode2==='read'?'active':''}" translate="no" type="button" data-access="read" aria-pressed="${loginMode2==='read'}">${eye}<span>${E(w.read)}</span></button><button class="n2access-option notranslate ${loginMode2==='write'?'active':''}" translate="no" type="button" data-access="write" aria-pressed="${loginMode2==='write'}">${pen}<span>${E(w.write)}</span></button></div><div class="n2access-hint" id="n2accessHint">${E(loginMode2==='read'?w.readHint:w.writeHint)}</div></div><label>${E(t('password'))}<input id="n2p" type="password" required autocomplete="current-password"></label><div id="n2e" class="n2err"></div><button class="btn primary" type="submit">${E(t('login'))}</button><button class="btn secondary" type="button" id="n2retry" hidden>${E(actionWord2('retry'))}</button></form></div>`;
  document.body.appendChild(d);
- d.querySelectorAll('[data-login-alliance]').forEach(b=>b.onclick=()=>{
-  const code=b.dataset.loginAlliance;d.querySelector('#n2a').value=code;
+ const setAlliance=code=>{
+  if(!['NRW','THM','NWO','NwO','CWR','PxR'].includes(code))return;
+  const select=d.querySelector('#n2a');if(select)select.value=code;
   d.querySelectorAll('[data-login-alliance]').forEach(x=>{const selected=x.dataset.loginAlliance===code;x.classList.toggle('active',selected);x.setAttribute('aria-pressed',String(selected))});
- });
+ };
  const setMode=mode=>{
   loginMode2=mode==='read'?'read':'write';
   try{localStorage.setItem('nap_v2_login_mode',loginMode2)}catch{}
@@ -166,10 +167,16 @@ function login(){
   d.querySelectorAll('[data-access]').forEach(x=>{const selected=x.dataset.access===loginMode2;x.classList.toggle('active',selected);x.setAttribute('aria-pressed',String(selected))});
   const hint=d.querySelector('#n2accessHint');if(hint)hint.textContent=loginMode2==='read'?w.readHint:w.writeHint;
  };
- d.querySelectorAll('[data-access]').forEach(b=>b.onclick=()=>setMode(b.dataset.access));
- const retry=d.querySelector('#n2retry');if(retry)retry.onclick=retrySavedSession2;
- d.querySelector('#n2form').onsubmit=async e=>{
-  e.preventDefault();const a=d.querySelector('#n2a').value,p=d.querySelector('#n2p').value,errBox=d.querySelector('#n2e');if(retry)retry.hidden=true;
+ // Delegate login interactions from the stable overlay container. Browser translators
+ // may replace child nodes; delegated handlers keep Read/Write and alliance selection working.
+ d.addEventListener('click',e=>{
+  const alliance=e.target.closest?.('[data-login-alliance]');if(alliance&&d.contains(alliance)){setAlliance(alliance.dataset.loginAlliance);return}
+  const access=e.target.closest?.('[data-access]');if(access&&d.contains(access)){setMode(access.dataset.access);return}
+  const retryButton=e.target.closest?.('#n2retry');if(retryButton&&d.contains(retryButton))retrySavedSession2();
+ });
+ d.addEventListener('submit',async e=>{
+  const form=e.target.closest?.('#n2form');if(!form||!d.contains(form))return;
+  e.preventDefault();const a=d.querySelector('#n2a')?.value||'NRW',p=d.querySelector('#n2p')?.value||'',errBox=d.querySelector('#n2e'),retry=d.querySelector('#n2retry');if(retry)retry.hidden=true;
   try{
    const z=await q(C.u+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:C.k,'Content-Type':'application/json'},body:JSON.stringify({email:loginEmail2(a,loginMode2),password:p})});
    save({...z,expires_at:Math.floor(Date.now()/1000)+(z.expires_in||3600)});await enter(a);
@@ -177,7 +184,7 @@ function login(){
    if(isSessionAuthError2(x)||x?.code==='ACCOUNT_INCOMPLETE'||x?.code==='ACCOUNT_MISMATCH')save(null);
    if(errBox)errBox.textContent=x?.isNetwork?actionWord2('connectionFail'):t('fail')+' '+(x?.message||'');
   }
- };
+ });
 }
 function active(v){return !v.expires_at||new Date(v.expires_at)>new Date()}
 function p(name){return S.p.find(x=>(x.name||x.player_name)===name)||{}}
