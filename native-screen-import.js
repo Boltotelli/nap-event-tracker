@@ -654,7 +654,8 @@ function kvkPrepRank(text){
 function kvkPrepName(text){
  const raw=String(text||'').split(/\r?\n/).map(v=>v.replace(/#\s*1044\b.*$/i,'').trim()).filter(Boolean)
   .filter(line=>!/^#?\s*[0-9OoIl|]{3,5}\s*$/i.test(line))
-  .join('\n').replace(/[\[(]\s*([a-z0-9]{2,6})\s*[\])lI|]/gi,'[$1]');
+  .join('\n').replace(/(^|\s)\[?\s*i?nrw\s*[\])lI|]\s*/gi,'$1[NRW]')
+  .replace(/[\[(]\s*([a-z0-9]{2,6})\s*[\])lI|]/gi,'[$1]');
  const parsed=parseNameOnly(raw,'');
  return parsed&&/[\p{L}]/u.test(parsed.name)&&!/^(rang|rank|punkte|points|score|server)$/i.test(parsed.name)?parsed:null;
 }
@@ -697,6 +698,15 @@ async function readKvkPrepSlots(frame,worker){
   }
   if(parsed)out.push({...parsed,score:item.score,rank,quality:true,kvkPrep:true,
    raw:(rank?'#'+rank+' ':'')+parsed.raw+' · '+item.score});
+ }
+ // A filtered leaderboard has gaps, but visible ranks must still increase
+ // as scores decrease. Clear contradictory OCR digits, never invent a rank.
+ out.sort((a,b)=>b.score-a.score);
+ let previous=0;
+ for(const row of out){
+  if(row.rank==null)continue;
+  if(row.rank<=previous){row.rank=null;row.rankConflictCleared=true}
+  else previous=row.rank;
  }
  try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'6',tessedit_char_whitelist:''})}catch{}
  return out;
