@@ -689,7 +689,7 @@ async function readKvkPrepSlots(frame,worker){
   }
   // The name is ABOVE the score; stop before the kingdom label at score Y.
   const nameCrop=cropRelative(frame,.275,cy-.050,.714,cy+.016,1200);
-  try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'7',tessedit_char_whitelist:''})}catch{}
+  try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'6',tessedit_char_whitelist:''})}catch{}
   let parsed=kvkPrepName((await worker.recognize(nameCrop)).data?.text||'');
   if(!parsed)parsed=kvkPrepName((await worker.recognize(enhancedCanvas(nameCrop))).data?.text||'');
   if(!parsed){
