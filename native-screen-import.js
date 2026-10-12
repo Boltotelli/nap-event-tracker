@@ -626,6 +626,85 @@ async function readMobilizationSlots(frame,worker){
  return rows;
 }
 
+
+/* KvK Prep: server ranks are sparse because the list is alliance-filtered.
+ * Read each visible row by its score Y position; the sticky own-player card
+ * is below the scanned area and #1044 beneath each name is not a player. */
+function kvkPrepScores(data,strip,frame){
+ const rows=[],H=frame.height;
+ for(const line of ocrLinesFromBlocks(data?.blocks||[])){
+  const score=parseMobilizationScoreText(line.text),y=normalizedLineY(line,strip);
+  if(!Number.isSafeInteger(score)||y==null)continue;
+  const center=(.404+y*.364)*H;
+  if(center>=H*.423&&center<=H*.757)rows.push({score,center,raw:line.text});
+ }
+ rows.sort((a,b)=>a.center-b.center);
+ const unique=[];
+ for(const row of rows){
+  const near=unique.find(x=>Math.abs(x.center-row.center)<H*.025);
+  if(!near)unique.push(row);
+  else if(String(row.raw).replace(/\D/g,'').length>String(near.raw).replace(/\D/g,'').length)Object.assign(near,row);
+ }
+ return unique;
+}
+function kvkPrepRank(text){
+ const d=ocrDigits(String(text||'')).replace(/[^0-9]/g,''),n=Number(d);
+ return d.length>0&&d.length<=3&&n>=1&&n<=200? n:null;
+}
+function kvkPrepName(text){
+ const raw=String(text||'').split(/\r?\n/).map(v=>v.replace(/#\s*1044\b.*$/i,'').trim()).filter(Boolean)
+  .join('\n').replace(/[\[(]\s*([a-z0-9]{2,6})\s*[\])lI|]/gi,'[$1]');
+ const parsed=parseNameOnly(raw,'');
+ return parsed&&/[\p{L}]/u.test(parsed.name)&&!/^(rang|rank|punkte|points|score|server)$/i.test(parsed.name)?parsed:null;
+}
+async function readKvkPrepSlots(frame,worker){
+ const H=frame.height,strip=cropRelative(frame,.688,.404,.961,.768,760),out=[];
+ try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'6',tessedit_char_whitelist:'0123456789.,'})}catch{}
+ let data=(await worker.recognize(strip,{}, {text:true,blocks:true})).data||{};
+ let scores=kvkPrepScores(data,strip,frame);
+ if(scores.length<2){
+  const enhanced=enhancedCanvas(strip);
+  data=(await worker.recognize(enhanced,{}, {text:true,blocks:true})).data||{};
+  const retry=kvkPrepScores(data,enhanced,frame);
+  if(retry.length>scores.length)scores=retry;
+ }
+ if(!scores.length)return out;
+ const stripRank=cropRelative(frame,.056,.405,.183,.768,430),ranks=[];
+ try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'6',tessedit_char_whitelist:'0123456789'})}catch{}
+ const rdata=(await worker.recognize(stripRank,{}, {text:true,blocks:true})).data||{};
+ for(const line of ocrLinesFromBlocks(rdata.blocks||[])){
+  const rank=kvkPrepRank(line.text),y=normalizedLineY(line,stripRank);
+  if(rank!=null&&y!=null)ranks.push({rank,center:(.405+y*.363)*H});
+ }
+ for(const item of scores){
+  const cy=item.center/H,near=ranks.filter(v=>Math.abs(v.center-item.center)<H*.025);
+  let rank=near.length===1?near[0].rank:null;
+  if(rank==null){
+   const crop=cropRelative(frame,.060,cy-.022,.178,cy+.024,340);
+   try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'7',tessedit_char_whitelist:'0123456789'})}catch{}
+   rank=kvkPrepRank((await worker.recognize(crop)).data?.text);
+   if(rank==null)rank=kvkPrepRank((await worker.recognize(enhancedCanvas(crop))).data?.text);
+  }
+  // The name is ABOVE the score; stop before the kingdom label at score Y.
+  const nameCrop=cropRelative(frame,.275,cy-.046,.714,cy-.011,1200);
+  try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'7',tessedit_char_whitelist:''})}catch{}
+  let parsed=kvkPrepName((await worker.recognize(nameCrop)).data?.text||'');
+  if(!parsed)parsed=kvkPrepName((await worker.recognize(enhancedCanvas(nameCrop))).data?.text||'');
+  if(!parsed){
+   const wide=cropRelative(frame,.25,cy-.051,.74,cy+.004,1250);
+   parsed=kvkPrepName((await worker.recognize(wide)).data?.text||'');
+  }
+  if(parsed)out.push({...parsed,score:item.score,rank,quality:true,kvkPrep:true,
+   raw:(rank?'#'+rank+' ':'')+parsed.raw+' · '+item.score});
+ }
+ try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'6',tessedit_char_whitelist:''})}catch{}
+ return out;
+}
+function sparseKvkCoverage(map){
+ const seen=[...map.keys()].filter(n=>Number.isInteger(n)&&n>=1&&n<=200).sort((a,b)=>a-b);
+ return {min:seen[0]??null,max:seen[seen.length-1]??null,seen,missing:[]};
+}
+
 function qualityNameCanvas(roi,bbox){
  if(!bbox||![bbox.x0,bbox.y0,bbox.x1,bbox.y1].every(Number.isFinite))return null;
  const x0=Math.max(0,Math.round(roi.width*.285)),x1=Math.min(roi.width,Math.round(roi.width*.735));
