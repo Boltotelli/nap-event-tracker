@@ -653,6 +653,7 @@ function kvkPrepRank(text){
 }
 function kvkPrepName(text){
  const raw=String(text||'').split(/\r?\n/).map(v=>v.replace(/#\s*1044\b.*$/i,'').trim()).filter(Boolean)
+  .filter(line=>!/^#?\s*[0-9OoIl|]{3,5}\s*$/i.test(line))
   .join('\n').replace(/[\[(]\s*([a-z0-9]{2,6})\s*[\])lI|]/gi,'[$1]');
  const parsed=parseNameOnly(raw,'');
  return parsed&&/[\p{L}]/u.test(parsed.name)&&!/^(rang|rank|punkte|points|score|server)$/i.test(parsed.name)?parsed:null;
@@ -686,12 +687,12 @@ async function readKvkPrepSlots(frame,worker){
    if(rank==null)rank=kvkPrepRank((await worker.recognize(enhancedCanvas(crop))).data?.text);
   }
   // The name is ABOVE the score; stop before the kingdom label at score Y.
-  const nameCrop=cropRelative(frame,.275,cy-.046,.714,cy-.011,1200);
+  const nameCrop=cropRelative(frame,.275,cy-.050,.714,cy+.016,1200);
   try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'7',tessedit_char_whitelist:''})}catch{}
   let parsed=kvkPrepName((await worker.recognize(nameCrop)).data?.text||'');
   if(!parsed)parsed=kvkPrepName((await worker.recognize(enhancedCanvas(nameCrop))).data?.text||'');
   if(!parsed){
-   const wide=cropRelative(frame,.25,cy-.051,.74,cy+.004,1250);
+   const wide=cropRelative(frame,.25,cy-.052,.74,cy+.019,1250);
    parsed=kvkPrepName((await worker.recognize(wide)).data?.text||'');
   }
   if(parsed)out.push({...parsed,score:item.score,rank,quality:true,kvkPrep:true,
