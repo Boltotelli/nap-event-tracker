@@ -1493,7 +1493,7 @@ async function analyze(){
   let members=[...(await roster(true))];
   const perfType=r.kind==='perf'?$('#nocrType',root).value:'';
   const isMobilization=r.kind==='perf'&&perfType==='alliance_mobilization';
-   const isKvkPrep=r.kind==='perf'&&perfType==='kvk_prep';
+  const isKvkPrep=r.kind==='perf'&&perfType==='kvk_prep';
   if(isMobilization&&perfOcc()?.event_schedule_id){
    try{
     const extras=await rpc('get_performance_candidate_roster',{p_event_schedule_id:perfOcc().event_schedule_id});
