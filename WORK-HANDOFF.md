@@ -1,6 +1,6 @@
 # WORK HANDOFF — NAP Event Tracker
 
-Last updated: 2026-10-02
+Last updated: 2026-10-12
 
 ## Current state
 
@@ -86,3 +86,10 @@ Do not remove preserved feature work or shared Supabase runtime components merel
 - First new case: warning player + R5. Any later case: 7-day Law-5 protection exception.
 - A new violation during an active 7-day period restarts the period from 7 days; only one active timer remains.
 - Active Unprotected players are NAP-wide visible on Home; Crown shows action queue and active timer.
+
+### 2026-10-12 · KvK Prep Performance OCR — test candidate
+- The KvK Prep recording is an alliance-filtered **personal** leaderboard: visible rows may have nonconsecutive global server ranks (e.g. 79, 89, 94, 99). Those gaps are **not** missing players.
+- The label `#1044` beneath a player name is the kingdom ID, not a player name, rank, or score. The pinned self-player row at the bottom must not be counted again.
+- Dedicated `readKvkPrepSlots()` now anchors rows by isolated score-column OCR, reads rank/name from their aligned columns, normalizes common `[NRW]` OCR variants, and checks that read ranks follow descending scores; doubtful/missing ranks stay editable for manual review.
+- KvK no longer runs unrelated podium OCR or contiguous-rank rescue. AM and Law 14 paths remain separate.
+- Source: `native-screen-import.js`, initially on feature branch `feature/kvk-prep-ocr-rows-20261012`; test on GitHub Pages/develop before promoting to main/Vercel. Reference recording: 2026-10-12 NRW KvK Prep video, 14 seconds, 1080×2316.
