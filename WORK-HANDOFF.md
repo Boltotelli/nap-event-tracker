@@ -1,6 +1,6 @@
 # WORK HANDOFF — NAP Event Tracker
 
-Last updated: 2026-10-02
+Last updated: 2026-10-12
 
 ## Current state
 
@@ -86,3 +86,10 @@ Do not remove preserved feature work or shared Supabase runtime components merel
 - First new case: warning player + R5. Any later case: 7-day Law-5 protection exception.
 - A new violation during an active 7-day period restarts the period from 7 days; only one active timer remains.
 - Active Unprotected players are NAP-wide visible on Home; Crown shows action queue and active timer.
+
+### 2026-10-12 · KvK Prep Performance OCR — released
+- Promoted only the tested KvK Prep row-OCR from `develop` to production `main`, without merging unrelated test-branch changes.
+- Only NRW players appear in the supplied alliance-filtered recording. `#1044` below a name is the kingdom label and is ignored.
+- Visible ranks are global server ranks and can be nonconsecutive. Do not infer missing players from rank gaps. The sticky bottom self-player row must not duplicate a result.
+- Isolated column OCR anchors each row on its score, reads name and rank separately, retains manual correction where recognition is uncertain.
+- Files: `native-screen-import.js` and its asset version in `index.html`; Alliance Mobilization and Law 14 flows remain unchanged.
