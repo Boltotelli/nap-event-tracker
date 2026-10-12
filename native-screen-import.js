@@ -1393,7 +1393,7 @@ function shell(root,kind){
  const perf=kind==='perf';root.innerHTML=
  '<div class="nocr-layout"><section class="nocr-panel"><div class="nocr-engine-badge">'+esc(ocr2('version'))+'</div><div class="nocr-fields">'+
  (perf?'<label>'+esc(tr('type'))+'<select id="nocrType"><option value="alliance_mobilization">Alliance Mobilization</option><option value="kvk_prep">KvK Prep · Top 200</option></select></label>':'')+
- (perf?'':'<label>'+esc(tr('event'))+'<select id="nocrEvent" disabled></select></label>')+
+ (perf?'':'<label>'+esc(tr('event'))+'<select id="nocrEvent"></select></label>')+
  '<label>'+esc(tr('occ'))+'<select id="nocrOcc"></select></label>'+
  (perf?'':'<label>'+esc(tr('day'))+'<select id="nocrPhase"></select></label><label>'+esc(tr('date'))+'<input id="nocrDay" type="date"></label>')+
  '</div><label class="nocr-file"><span class="nocr-file-icon">▣</span><strong>'+esc(tr('file'))+'</strong><small id="nocrFilename">MP4 / MOV</small><input id="nocrFile" type="file" accept="video/mp4,video/quicktime,video/*"></label>'+
@@ -2197,9 +2197,14 @@ function mount(root,kind,allowed=[]){
  shell(root,kind);
  const r=run;$('#nocrAnalyze',root).onclick=analyze;$('#nocrSave',root).onclick=save;$('#nocrEvidenceRetry',root).onclick=retryPendingEvidence;
  if(kind==='law'){
-  const event=$('#liveScreenEvent')?.value||allowed[0]?.event_name;
-  $('#nocrEvent',root).innerHTML=EVENTS.filter(n=>allowed.some(o=>o.event_name===n)).map(x=>selectOption(x,x)).join('');
-  if(event&&EVENTS.includes(event))$('#nocrEvent',root).value=event;
+  const permittedEvents=EVENTS.filter(name=>allowed.some(o=>o.event_name===name));
+  const picker=$('#nocrEvent',root);
+  picker.innerHTML=permittedEvents.map(name=>selectOption(name,name)).join('');
+  // Only disable when the server returned no selectable event.
+  picker.disabled=permittedEvents.length===0;
+  const previous=$('#liveScreenEvent')?.value;
+  const event=permittedEvents.includes(previous)?previous:permittedEvents[0];
+  if(event)picker.value=event;
   $('#nocrEvent',root).onchange=lawOccurrence;$('#nocrOcc',root).onchange=setLawPhase;
   $('#nocrPhase',root).onchange=async()=>{
   if(r.hits.length)await refreshReview(r);
