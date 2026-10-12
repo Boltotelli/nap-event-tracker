@@ -860,7 +860,7 @@ function playerNameSimilarity(row,p){
    if(!nn)continue;
    for(const v of variants){
     best=Math.max(best,similarity(v,nn));
-    if(row?.mobilization)best=Math.max(best,ocrWindowSimilarity(v,nn));
+    if(row?.mobilization||row?.kvkPrep)best=Math.max(best,ocrWindowSimilarity(v,nn));
     // OCR often glues the alliance code/noise to very short names (PxRJAK1 -> Ak1).
     if(nn.length<=4&&v.endsWith(nn)&&code&&v.startsWith(code))best=Math.max(best,.995);
     else if(nn.length>=5&&v.endsWith(nn))best=Math.max(best,.97);
@@ -910,7 +910,7 @@ function matchPlayer(row,members){
  const quality=!!row.quality,alliance=String(row.alliance||'').toLowerCase();
  const same=alliance?members.filter(p=>String(p.alliance_code||'').toLowerCase()===alliance):members;
  let list=rankedPlayerCandidates(row,same),best=list[0],second=list[1];
- const am=!!row.mobilization;
+ const am=!!(row.mobilization||row.kvkPrep);
  const threshold=am ? .80 : (quality?(row.alliance?.84:.90):(row.alliance?.92:.96));
  const margin=am ? .12 : (quality?.06:.07);
  const accept=(b,s,t=threshold)=>{
@@ -1482,6 +1482,7 @@ async function analyze(){
   let members=[...(await roster(true))];
   const perfType=r.kind==='perf'?$('#nocrType',root).value:'';
   const isMobilization=r.kind==='perf'&&perfType==='alliance_mobilization';
+   const isKvkPrep=r.kind==='perf'&&perfType==='kvk_prep';
   if(isMobilization&&perfOcc()?.event_schedule_id){
    try{
     const extras=await rpc('get_performance_candidate_roster',{p_event_schedule_id:perfOcc().event_schedule_id});
@@ -1499,7 +1500,7 @@ async function analyze(){
   r.members=members;r.fileHash=await sha256(file);worker=await ensureWorker();
   video=document.createElement('video');url=await metadata(video,file);if(r!==run)return;
   const dur=video.duration;progress(1,5,0);
-  const times=isMobilization?performanceFrameTimes(dur):baseFrameTimes(dur),observations=new Map(),unmatched=new Map(),rankMap=new Map(),podiumRankByScore=new Map();r.frames=[];
+  const times=(isMobilization||isKvkPrep)?performanceFrameTimes(dur):baseFrameTimes(dur),observations=new Map(),unmatched=new Map(),rankMap=new Map(),podiumRankByScore=new Map();r.frames=[];
   const processRows=(rows,sec,full)=>{
    let still=null;
    for(const row of rows){
@@ -1507,7 +1508,9 @@ async function analyze(){
     const cleanedName=isMobilization?stripMissionText(row.name):row.name;
     if(isMobilization&&!norm(cleanedName))continue;
     const matchRow=isMobilization?{...row,name:cleanedName,alliance:'',quality:true,mobilization:true}:row;
-    const p=matchPlayer(matchRow,members);
+    // The recording's [NRW] tag must never be matched to another alliance.
+    const candidates=isKvkPrep&&row.alliance?members.filter(p=>String(p.alliance_code||'').toLowerCase()===String(row.alliance).toLowerCase()):members;
+    const p=matchPlayer(matchRow,candidates);
     if(!p){
      const k=(row.rank||'')+'|'+norm(row.name)+'|'+row.score;
      if(!unmatched.has(k)){
@@ -1538,8 +1541,8 @@ async function analyze(){
     progress(1,5+65*((i+1)/times.length),observations.size);
     continue;
    }
-   if(isMobilization){
-    // Keep every sampled AM frame available for manual review. Missing players
+   if(isMobilization||isKvkPrep){
+    // Keep every sampled Performance frame available for manual review. Missing players
     // often sit between the old 12 evenly spaced evidence stills.
     if(r.frames.length<40)r.frames.push({time:sec,image:full.toDataURL('image/jpeg',.68)});
    }else if(r.frames.length<12&&i%Math.max(1,Math.floor(times.length/12))===0){
@@ -1553,13 +1556,15 @@ async function analyze(){
     }
     parsed=await readMobilizationSlots(full,worker);
     for(const rank of parsed.allRanks||[])recordRank(rank,sec,rankMap);
+   }else if(isKvkPrep){
+    parsed=await readKvkPrepSlots(full,worker);
    }else{
     const ocr=(await worker.recognize(roi,{}, {text:true,blocks:true})).data||{};
     for(const rank of ranksFromText(ocr.text||''))recordRank(rank,sec,rankMap);
     parsed=parseOcrData(ocr);
    }
    processRows(parsed,sec,full);
-   if(i===0&&!isMobilization){
+   if(i===0&&!isMobilization&&!isKvkPrep){
     const podium=podiumCanvas(full),cards=splitPodiumCards(podium),podiumRows=[];
     try{await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'7',tessedit_char_whitelist:''})}catch{}
     for(let pi=0;pi<cards.length;pi++){
@@ -1579,8 +1584,8 @@ async function analyze(){
   if(run!==r)return;
   if(decodedFrames===0)throw Error('No video frame could be decoded. Please export the recording as H.264 MP4 and try again.');
   if(skippedFrames)console.warn('OCR continued after skipped video frames',skippedFrames);
-  let coverage=rankCoverage(rankMap),rescue=rescueTimes(coverage,rankMap,dur,times);
-  if(!isMobilization&&coverage.missing.length&&rescue.length){
+  let coverage=isKvkPrep?sparseKvkCoverage(rankMap):rankCoverage(rankMap),rescue=isKvkPrep?[]:rescueTimes(coverage,rankMap,dur,times);
+  if(!isMobilization&&!isKvkPrep&&coverage.missing.length&&rescue.length){
    progress(1,72,observations.size,'rescue');
    const missingSet=new Set(coverage.missing);
    for(let i=0;i<rescue.length;i++){
@@ -1598,7 +1603,7 @@ async function analyze(){
    coverage=rankCoverage(rankMap);
   }
   if(run!==r)return;
-  coverage=rankCoverage(rankMap);
+  coverage=isKvkPrep?sparseKvkCoverage(rankMap):rankCoverage(rankMap);
   r.coverage=coverage;
   r.hits=[...observations.values()].map(consensusHit).filter(Boolean);
   if(isMobilization){r.hits=applyMobilizationPodiumRanks(r.hits,podiumRankByScore);r.hits=normalizeMobilizationRanks(r.hits);}
@@ -1754,7 +1759,8 @@ async function analyze(){
   const missingHitRanks=r.missingMatchedRanks||[];
   const missingHitText=missingHitRanks.length?' · '+ocr2('missingHits')+': '+missingHitRanks.join(', '):'';
   const assignment=' · '+r.hits.length+' '+ocr2('matched')+(unassignedRanks?' · '+unassignedRanks+' '+ocr2('unassigned'):'')+missingHitText;
-  if(cov?.min&&cov?.max&&cov.missing.length)status(coveredRanks+' '+ocr2('rankSlots')+' · '+ocr2('coverage')+' '+cov.min+'–'+cov.max+' · '+ocr2('missing')+': '+cov.missing.join(', ')+assignment+' · '+ocr2('manual'),true);
+  if(isKvkPrep)status(coveredRanks+' '+ocr2('rankSlots')+assignment,false);
+  else if(cov?.min&&cov?.max&&cov.missing.length)status(coveredRanks+' '+ocr2('rankSlots')+' · '+ocr2('coverage')+' '+cov.min+'–'+cov.max+' · '+ocr2('missing')+': '+cov.missing.join(', ')+assignment+' · '+ocr2('manual'),true);
   else if(cov?.min&&cov?.max)status(coveredRanks+' '+ocr2('rankSlots')+' · '+ocr2('coverage')+' '+cov.min+'–'+cov.max+' · '+ocr2('complete')+assignment,missingHitRanks.length>0);
   else status(r.hits.length?tr('ready'):reviewText('nothing'),false);
  }catch(e){console.error('native screen OCR',e);status(tr('error')+': '+(e.message||e),true)}
