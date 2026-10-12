@@ -93,3 +93,9 @@ Do not remove preserved feature work or shared Supabase runtime components merel
 - Visible ranks are global server ranks and can be nonconsecutive. Do not infer missing players from rank gaps. The sticky bottom self-player row must not duplicate a result.
 - Isolated column OCR anchors each row on its score, reads name and rank separately, retains manual correction where recognition is uncertain.
 - Files: `native-screen-import.js` and its asset version in `index.html`; Alliance Mobilization and Law 14 flows remain unchanged.
+
+### 2026-10-12 · Armament / ScreenImporter event selector
+- The event-window backend and NRW manual override correctly allowed Armament Competition on October 12, while Alliance Brawl was also open.
+- Root cause of the nonselectable Armament option: the ScreenImporter HTML event `<select id="nocrEvent">` was hard-coded as `disabled`, even after valid event options were loaded. The default event could not be changed.
+- Fixed in `native-screen-import.js`: populate from server-authorized events, enable selector whenever any are available, disable only for an empty server-authorized list, keep occurrence/phase validation on selection.
+- Bumped script cache key in `index.html`. No backend or schedule changes.
