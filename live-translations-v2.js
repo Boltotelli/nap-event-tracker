@@ -15,6 +15,25 @@ rows.push(
  ["Warnfenster, Event-Verfügbarkeit und Performance.","Warning window, event availability and performance.","Délai d’avertissement, disponibilité des événements et performances.","Plazo de advertencia, disponibilidad de eventos y rendimiento."],
  ["Verstöße bleiben serverweit fest 28 Tage gültig. Diese Dauer kann nicht mehr pro Allianz geändert werden.","Violations remain valid for a fixed 28 days server-wide. This period can no longer be changed per alliance.","Les infractions restent valables 28 jours sur tout le serveur. Cette durée ne peut plus être modifiée par alliance.","Las infracciones siguen siendo válidas durante 28 días en todo el servidor. Este plazo ya no puede modificarse por alianza."]
 );
+
+// Profile text nodes may remain mounted while the language picker changes.
+// Register the exact localized strings so the DOM translator can update them without rebuilding forms.
+rows.push(
+ ["← Spielerakten","← Player files","← Dossiers joueurs","← Expedientes"],
+ ["SPIELERPROFIL","PLAYER PROFILE","PROFIL DU JOUEUR","PERFIL DEL JUGADOR"],
+ ["Fälle","Cases","Cas","Casos"],
+ ["Performance","Performance","Performance","Rendimiento"],
+ ["✎ Korrigieren","✎ Correct","✎ Corriger","✎ Corregir"],
+ ["Intern · keine Law 14","Internal · not Law 14","Interne · pas loi 14","Interno · no Law 14"],
+ ["Interner Allianzfall. Dieser Eintrag erzeugt keine Law-14-Stufe oder NAP-Sanktion.","Internal alliance case. This entry does not create a Law 14 level or NAP sanction.","Cas interne à l’alliance. Cette entrée ne crée aucun niveau loi 14 ni sanction NAP.","Caso interno de la alianza. Esta entrada no crea un nivel Law 14 ni una sanción NAP."],
+ ["Screenshots zum Verstoß","Violation screenshots","Captures de l’infraction","Capturas de la infracción"],
+ ["Screenshot konnte nicht geladen werden.","Could not load screenshot.","Impossible de charger la capture.","No se pudo cargar la captura."],
+ ["Kommentar / Notiz zum Verstoß","Violation comment / note","Commentaire / note sur l’infraction","Comentario / nota de la infracción"],
+ ["Diese Aktenkommentare sind nicht einem einzelnen Verstoß zugeordnet.","These comments are not linked to an individual violation.","Ces commentaires ne sont pas liés à une infraction précise.","Estos comentarios no están asociados a una infracción concreta."],
+ ["Keine weiteren Aktenkommentare.","No other player-file comments.","Aucun autre commentaire.","Sin otros comentarios."],
+ ["Videoposition","Video position","Position dans la vidéo","Posición en el vídeo"],
+ ["Aus einem früheren NAP-weiten ScreenRecording-Import übernommen.","Imported from an earlier NAP-wide ScreenRecording import.","Importé d’un ancien import ScreenRecording NAP.","Importado de una prueba anterior de ScreenRecording NAP."]
+);
 const dict={de:{},en:{},fr:{},es:{}};
 for(const [de,en,fr,es] of rows){dict.en[de]=en;dict.fr[de]=fr;dict.es[de]=es}
 const reverse=new Map();
