@@ -38,6 +38,13 @@ const dict={de:{},en:{},fr:{},es:{}};
 for(const [de,en,fr,es] of rows){dict.en[de]=en;dict.fr[de]=fr;dict.es[de]=es}
 const reverse=new Map();
 for(const [de,en,fr,es] of rows)for(const label of [en,fr,es])if(label&&!reverse.has(label))reverse.set(label,de);
+// Alternate phrasings emitted by the player profile must also be reversible
+// after switching languages without rebuilding the player's current form.
+for(const [variant,source] of [
+ ['Aperçu','Übersicht'],
+ ['No screenshot stored for this violation.','Kein Screenshot zu diesem Verstoß gespeichert.'],
+ ['Sin infracciones.','Keine Verstöße.']
+])if(!reverse.has(variant))reverse.set(variant,source);
 const originals=new WeakMap();
 const lang=()=>document.getElementById('languagePicker')?.value||document.documentElement.lang||'de';
 const escape=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
