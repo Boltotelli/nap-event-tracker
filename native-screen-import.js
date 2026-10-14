@@ -39,9 +39,9 @@ const POST_CONTACT_WORDS={
   hint:'Confirma solo si sabes que el jugador volvió a gastar después del contacto. Una puntuación OCR más alta por sí sola no es una prueba.'
  }
 };
-function postContactText(key){const d=POST_CONTACT_WORDS[lang()]||POST_CONTACT_WORDS.en;return d[key]||key}
+function postContactText(key){const d=POST_CONTACT_WORDS[lng()]||POST_CONTACT_WORDS.en;return d[key]||key}
 const reviewText=(key)=>((REVIEW_WORDS[lng()]||REVIEW_WORDS.de)[key]||key);
-const points=n=>Number(n).toLocaleString('de-DE');
+const points=n=>fmt(n);
 const NAP_ORDER=['NWO','THM','CWR','NRW','PxR','NwO'];
 const REQUIRED_EXTERNAL_ALLIANCES=['TWD'];
 const UNAFFILIATED_CODE='__UNAFFILIATED__';
