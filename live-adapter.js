@@ -713,11 +713,18 @@ function napViolationStats2(){
  rows.map(x=>'<div class="live-stat"><b>'+N(x.valid_violations||0)+'</b><small><span style="text-transform:none">'+E(x.alliance_code)+'</span> · '+N(x.affected_players||0)+' '+E(w.players)+'</small></div>').join('')+
  '</div></div></section>';
 }
+const NAP_BAN_WORDS2={
+ de:{title:'NAP-Bans',description:'Aktive permanente NAP-Bans.',deactivate:'Deaktivieren',empty:'Keine aktiven NAP-Bans.',add:'NAP-Ban hinzufügen',player:'Spieler',playerId:'Spieler-ID',formerAlliance:'Frühere Allianz',reason:'Grund',save:'NAP-Ban speichern'},
+ en:{title:'NAP bans',description:'Active permanent NAP bans.',deactivate:'Deactivate',empty:'No active NAP bans.',add:'Add NAP ban',player:'Player',playerId:'Player ID',formerAlliance:'Former alliance',reason:'Reason',save:'Save NAP ban'},
+ fr:{title:'Bans NAP',description:'Bans NAP permanents actifs.',deactivate:'Désactiver',empty:'Aucun ban NAP actif.',add:'Ajouter un ban NAP',player:'Joueur',playerId:'ID du joueur',formerAlliance:'Ancienne alliance',reason:'Motif',save:'Enregistrer le ban NAP'},
+ es:{title:'Vetos NAP',description:'Vetos NAP permanentes activos.',deactivate:'Desactivar',empty:'No hay vetos NAP activos.',add:'Añadir veto NAP',player:'Jugador',playerId:'ID del jugador',formerAlliance:'Alianza anterior',reason:'Motivo',save:'Guardar veto NAP'}
+};
+const napBanWords2=()=>NAP_BAN_WORDS2[L()]||NAP_BAN_WORDS2.de;
 function renderNapLive(){
  const v=document.getElementById('view-nap');if(!v)return;
  const now=Date.now(),activeSpend=(S.spend||[]).filter(x=>!x.ended_at&&(!x.starts_at||new Date(x.starts_at).getTime()<=now)&&(!x.ends_at||new Date(x.ends_at).getTime()>now)),
   hosts=S.level4Hosting||[],hw=level4HomeWords2();
- const tabs=[['overview','Übersicht',0],['alerts','Hinweise',hosts.length+S.o.length],['exclusions','Exclusions',S.e.length],['bans','NAP Bans',S.bans.length],['spending','Spending Exclusions',activeSpend.length]];
+ const tabs=[['overview','Übersicht',0],['alerts','Hinweise',hosts.length+S.o.length],['exclusions','Exclusions',S.e.length],['bans',napBanWords2().title,S.bans.length],['spending','Spending Exclusions',activeSpend.length]];
  v.innerHTML='<div class="hero"><div><div class="kicker">NAP CENTER · LIVE</div><h1>NAP-weite Transparenz, private Details getrennt.</h1><p>Exclusions, Bans, Spending Exclusions und NAP-Hinweise an einem Ort.</p></div></div>'+
  '<div class="live-tabs">'+tabs.map(x=>'<button class="live-tab '+(liveNapTab===x[0]?'active':'')+'" data-live-naptab="'+x[0]+'">'+x[1]+(x[2]?'<span class="tab-count">'+x[2]+'</span>':'')+'</button>').join('')+'</div><div id="liveNapBody"></div>';
  v.querySelectorAll('[data-live-naptab]').forEach(b=>b.onclick=()=>{liveNapTab=b.dataset.liveNaptab;renderNapLive()});
@@ -749,10 +756,10 @@ function renderNapLive(){
    document.getElementById('liveExclusionForm').onsubmit=saveManualExclusion2;document.querySelectorAll('.live-end-exclusion').forEach(b=>b.onclick=()=>endExclusion2(b.dataset.id));return;
  }
  if(liveNapTab==='bans'){
-   const can=!!S.profile?.can_manage_bans;
-   body.innerHTML='<div class="live-panel-grid"><section class="card"><div class="card-head"><div><div class="card-title">NAP Bans</div><div class="card-sub">Aktive permanente NAP-Bans.</div></div><span class="pill red">'+S.bans.length+'</span></div><div class="card-body live-list">'+
-   (S.bans.length?S.bans.map(x=>napRow2(x.player_name,(x.former_alliance||'–')+(x.player_game_id?' · ID '+x.player_game_id:'')+(x.reason?' · '+x.reason:''),can?'<button class="btn small secondary live-end-ban" data-id="'+E(x.id)+'">deaktivieren</button>':'<span class="pill red">BAN</span>')).join(''):'<div class="live-empty-state">Keine aktiven NAP Bans.</div>')+
-   '</div></section>'+(can?'<section class="card"><div class="card-head"><div><div class="card-title">Ban hinzufügen</div></div></div><div class="card-body"><form id="liveBanForm" class="live-form"><label>Spieler<input id="liveBanPlayer" required></label><label>Player ID<input id="liveBanId"></label><label>Frühere Allianz<input id="liveBanAlliance"></label><label>Grund<textarea id="liveBanReason" required></textarea></label><button class="btn primary" type="submit">NAP Ban speichern</button><div id="liveBanStatus" class="live-status"></div></form></div></section>':'')+'</div>';
+   const can=!!S.profile?.can_manage_bans,bw=napBanWords2();
+   body.innerHTML='<div class="live-panel-grid"><section class="card"><div class="card-head"><div><div class="card-title">'+E(bw.title)+'</div><div class="card-sub">'+E(bw.description)+'</div></div><span class="pill red">'+S.bans.length+'</span></div><div class="card-body live-list">'+
+   (S.bans.length?S.bans.map(x=>napRow2(x.player_name,(x.former_alliance||'–')+(x.player_game_id?' · ID '+x.player_game_id:'')+(x.reason?' · '+x.reason:''),can?'<button class="btn small secondary live-end-ban" data-id="'+E(x.id)+'">'+E(bw.deactivate)+'</button>':'<span class="pill red">BAN</span>')).join(''):'<div class="live-empty-state">'+E(bw.empty)+'</div>')+
+   '</div></section>'+(can?'<section class="card"><div class="card-head"><div><div class="card-title">'+E(bw.add)+'</div></div></div><div class="card-body"><form id="liveBanForm" class="live-form"><label>'+E(bw.player)+'<input id="liveBanPlayer" required></label><label>'+E(bw.playerId)+'<input id="liveBanId"></label><label>'+E(bw.formerAlliance)+'<input id="liveBanAlliance"></label><label>'+E(bw.reason)+'<textarea id="liveBanReason" required></textarea></label><button class="btn primary" type="submit">'+E(bw.save)+'</button><div id="liveBanStatus" class="live-status"></div></form></div></section>':'')+'</div>';
    document.querySelectorAll('.live-end-ban').forEach(b=>b.onclick=()=>endBan2(b.dataset.id));document.getElementById('liveBanForm')?.addEventListener('submit',saveBan2);return;
  }
  const sg=S.sgWindow||null,sw=spendWords2();
