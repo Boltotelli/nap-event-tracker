@@ -93,3 +93,10 @@ Do not remove preserved feature work or shared Supabase runtime components merel
 - Dedicated `readKvkPrepSlots()` now anchors rows by isolated score-column OCR, reads rank/name from their aligned columns, normalizes common `[NRW]` OCR variants, and checks that read ranks follow descending scores; doubtful/missing ranks stay editable for manual review.
 - KvK no longer runs unrelated podium OCR or contiguous-rank rescue. AM and Law 14 paths remain separate.
 - Source: `native-screen-import.js`, initially on feature branch `feature/kvk-prep-ocr-rows-20261012`; test on GitHub Pages/develop before promoting to main/Vercel. Reference recording: 2026-10-12 NRW KvK Prep video, 14 seconds, 1080×2316.
+
+### 2026-10-14 · Dashboard spending factors (test)
+- Restore the actual event spending factor `score / target_value` on Home action cards, Home recent-violation cards, and affected player-list cards.
+- Show actual score factor separately from the applicable allowed threshold; use the existing `violationLimit2` / `phaseMultiplier2` rule for the limit (normally 3×, historical SG exceptions 4×). Do not infer a 6× cap from an example.
+- Multiplier labels and numeric formatting are localized DE/EN/FR/ES; compact wraps on mobile.
+- Do not display factors for internal attendance-only cases or missing/zero target; no database, penalty or threshold changes.
+- `live-adapter.js` and its cache key in `index.html` changed only.
