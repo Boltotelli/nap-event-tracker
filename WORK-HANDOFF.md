@@ -99,3 +99,10 @@ Do not remove preserved feature work or shared Supabase runtime components merel
 - Root cause of the nonselectable Armament option: the ScreenImporter HTML event `<select id="nocrEvent">` was hard-coded as `disabled`, even after valid event options were loaded. The default event could not be changed.
 - Fixed in `native-screen-import.js`: populate from server-authorized events, enable selector whenever any are available, disable only for an empty server-authorized list, keep occurrence/phase validation on selection.
 - Bumped script cache key in `index.html`. No backend or schedule changes.
+
+### 2026-10-14 · Dashboard spending factors (production)
+- Restore the actual event spending factor `score / target_value` on Home action cards, Home recent-violation cards, and affected player-list cards.
+- Show actual score factor separately from the applicable allowed threshold; use the existing `violationLimit2` / `phaseMultiplier2` rule for the limit (normally 3×, historical SG exceptions 4×). Do not infer a 6× cap from an example.
+- Multiplier labels and numeric formatting are localized DE/EN/FR/ES; compact wraps on mobile.
+- Do not display factors for internal attendance-only cases or missing/zero target; no database, penalty or threshold changes.
+- `live-adapter.js` and its cache key in `index.html` changed only.
