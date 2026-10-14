@@ -100,3 +100,10 @@ Do not remove preserved feature work or shared Supabase runtime components merel
 - Multiplier labels and numeric formatting are localized DE/EN/FR/ES; compact wraps on mobile.
 - Do not display factors for internal attendance-only cases or missing/zero target; no database, penalty or threshold changes.
 - `live-adapter.js` and its cache key in `index.html` changed only.
+
+### 2026-10-14 · NAP Bans DE/EN/FR/ES localization
+- NWO support ticket "German" / "More german": EN language showed German subheading ("Aktive permanente NAP-Bans.") and action buttons ("deaktivieren").
+- Root cause: NAP Ban panel markup in `live-adapter.js` had hard-coded German UI text, missing from fallback dynamic translation map.
+- Added `NAP_BAN_WORDS2` dictionaries (DE/EN/FR/ES) for tab title, panel description, empty state, deactivate buttons, new-ban form labels and submit button.
+- The NAP screen is re-rendered by existing language-selector listener on language change; no page reload is required. Record fields/player content are escaped and never translated. Read-only and `can_manage_bans` checks remain unchanged.
+- Changed front-end UI and `index.html` script cache key only. Ban DB/RPC/permissions unchanged.
