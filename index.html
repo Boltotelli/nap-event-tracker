@@ -1085,7 +1085,7 @@ img[src*="./assets/alliance/"]{
   <div class="law-pane" data-law-pane="cases">
     <div class="case-grid">
       <article class="case-card"><div class="case-top"><span class="pill gold">LAW 9</span><span class="muted">22.09.2026 · NRW</span></div><b>Snapshot-Korrektur THM</b><p data-i18n="caseExampleOne">Baseline-Mitgliederzahl wurde vor Freigabe geprüft und korrigiert.</p><div class="evidence-row"><span class="evidence-chip">📎 snapshot.png</span><span class="pill green" data-i18n="resolved">erledigt</span></div></article>
-      <article class="case-card"><div class="case-top"><span class="pill red">LAW 6</span><span class="muted">20.09.2026 · CWR</span></div><b>Castle Battle Incident</b><p data-i18n="case–">Gemeldeter Fall mit Screenshot und interner Entscheidung.</p><div class="evidence-row"><span class="evidence-chip">📎 evidence.jpg</span><span class="pill gold" data-i18n="open">offen</span></div></article>
+      <article class="case-card"><div class="case-top"><span class="pill red">LAW 6</span><span class="muted">20.09.2026 · CWR</span></div><b>Castle Battle Incident</b><p data-i18n="caseDescription">Gemeldeter Fall mit Screenshot und interner Entscheidung.</p><div class="evidence-row"><span class="evidence-chip">📎 evidence.jpg</span><span class="pill gold" data-i18n="open">offen</span></div></article>
     </div>
   </div>
 
@@ -1539,6 +1539,12 @@ Object.assign(UI.es,{
   moduleEnabled:'Módulo activo',leaderboardOnHome:'Ranking en Inicio',settingsSaved:'Ajustes guardados.'
 });
 
+
+Object.assign(UI.de,{caseDescription:'Gemeldeter Fall mit Screenshot und interner Entscheidung.',playerIdOptional:'Spieler-ID (optional)',cancel:'Abbrechen'});
+Object.assign(UI.en,{caseDescription:'Reported case with screenshot and internal decision.',playerIdOptional:'Player ID (optional)',cancel:'Cancel'});
+Object.assign(UI.fr,{caseDescription:'Cas signalé avec capture d’écran et décision interne.',playerIdOptional:'ID du joueur (facultatif)',cancel:'Annuler'});
+Object.assign(UI.es,{caseDescription:'Caso denunciado con captura de pantalla y decisión interna.',playerIdOptional:'ID del jugador (opcional)',cancel:'Cancelar'});
+
 function tr(k){return (UI[currentLang]&&UI[currentLang][k])||(UI.de&&UI.de[k])||k}
 function applyTranslations(){document.documentElement.lang=currentLang;document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;el.textContent=tr(k)});document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{el.placeholder=tr(el.dataset.i18nPlaceholder)});const active=document.querySelector('.view.active')?.id?.replace('view-','')||'home';const key=titles[active];document.getElementById('pageTitle').textContent=UI[currentLang][key]||key||'NAP Tracker';if(typeof updateQuickActionCount==='function')updateQuickActionCount();}
 
@@ -1798,7 +1804,7 @@ document.getElementById('settingsSaveDemo')?.addEventListener('click',()=>{
 </script>
 <script>window.NAP2_BUILD='20260928-settings-lock1';</script>
 <script src="./live-adapter.js?v=20261014-nap-ban-i18n-test1"></script>
-<script src="./native-screen-import.js?v=20261012-enable-event-picker-test1"></script>
-<script src="./live-translations-v2.js?v=20260925-overdue-days-i18n"></script>
+<script src="./native-screen-import.js?v=20261014-global-i18n-audit-test1"></script>
+<script src="./live-translations-v2.js?v=20261014-global-i18n-audit-test1"></script>
 </body>
 </html>
