@@ -107,3 +107,11 @@ Do not remove preserved feature work or shared Supabase runtime components merel
 - Added `NAP_BAN_WORDS2` dictionaries (DE/EN/FR/ES) for tab title, panel description, empty state, deactivate buttons, new-ban form labels and submit button.
 - The NAP screen is re-rendered by existing language-selector listener on language change; no page reload is required. Record fields/player content are escaped and never translated. Read-only and `can_manage_bans` checks remain unchanged.
 - Changed front-end UI and `index.html` script cache key only. Ban DB/RPC/permissions unchanged.
+
+### 2026-10-14 · Global DE/EN/FR/ES source i18n audit (test only)
+- Audited `index.html` static `data-i18n` keys, `live-adapter.js` dynamic markup and dictionaries, `live-translations-v2.js` runtime translator, and `native-screen-import.js` OCR dictionaries.
+- Found three missing static translation keys: broken placeholder `case–` (renamed `caseDescription`), `playerIdOptional`, and `cancel`. All 349 distinct static i18n keys now resolve in DE/EN/FR/ES.
+- Added nine uncovered exact UI sentences in the dynamic translator across NAP, KvK, Performance and Settings. The translation table now has 301 distinct DE source entries with all four language values, and no duplicate source entries.
+- Found and fixed a latent `postContactText` OCR error referring to undefined `lang()` instead of existing `lng()`, and hard-coded German number formatting in `points()`; use common locale-aware `fmt()`.
+- Script syntax checks passed (inline index script + 3 external JS files). Existing 43 main OCR keys, 48 OCR review keys, 23 OCR supplemental keys and 36 support keys remain complete across DE/EN/FR/ES.
+- Scope: source-level audit and tests; not a fully authenticated, device/browser visual pass. Re-rendered profile forms and free-text data still warrant live UI checks. Do not publish main until intentionally approved.
