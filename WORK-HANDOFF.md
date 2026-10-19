@@ -1,6 +1,6 @@
 # WORK HANDOFF — NAP Event Tracker
 
-Last updated: 2026-10-12
+Last updated: 2026-10-19
 
 ## Current state
 
@@ -113,3 +113,12 @@ Do not remove preserved feature work or shared Supabase runtime components merel
 - Added `NAP_BAN_WORDS2` dictionaries (DE/EN/FR/ES) for tab title, panel description, empty state, deactivate buttons, new-ban form labels and submit button.
 - The NAP screen is re-rendered by existing language-selector listener on language change; no page reload is required. Record fields/player content are escaped and never translated. Read-only and `can_manage_bans` checks remain unchanged.
 - Changed front-end UI and `index.html` script cache key only. Ban DB/RPC/permissions unchanged.
+
+### 2026-10-19 · SG Spending Exclusions OCR hotfix (production)
+
+- Symptom: two excluded SG Day 1 players, `niemand` (THM) and `NinjaNoodle` (NWO), were incorrectly imported as stage-1 overspending violations by the THM OCR batch on October 19 at 18:12 UTC.
+- Root cause: both `preview_screen_recording_nap_occurrence_v2` and `import_screen_recording_nap_occurrence_v2` substituted 12:00 UTC for missing recording capture timestamps; SG spending exclusions created later the same day were therefore ignored, despite being active at import time.
+- Production Supabase migration `20261019182900_fix_sg_spending_exclusions_ocr_day_fallback` updates BOTH RPCs: when exact capture time is known, preserve precise timestamp checks; when unknown, match active SG spending exclusions overlapping the recording UTC day. Other event types and target thresholds are untouched.
+- Recovery: removed the two false positive violations and their open stage-1 sanctions and associated import cases. Audit actions `violation_deleted` retain the reason and score; the other 14 SG Day 1 violations were left unchanged. All nine current SG exclusions remain active.
+- Verified the migration in production, both function source checks, date overlap behavior for current exceptions, absence of both false cases, and audit entries. No new browser-based OCR upload was made for end-to-end testing.
+- Reproducible SQL patch: `database/migrations/20261019182900_fix_sg_spending_exclusions_ocr_day_fallback.sql`.
