@@ -572,7 +572,8 @@ function phaseMultiplier2(event,phase,dateValue){
  const day=dateOnly?raw:parsed&&!Number.isNaN(parsed.getTime())?
    parsed.toISOString().slice(0,10):'';
  return event==='Strongest Governor'&&((phase==='sg2'&&day==='2026-09-22')||
-   (phase==='sg3'&&day==='2026-09-23'))?4:3;
+   (phase==='sg3'&&day==='2026-09-23')||
+   (phase==='sg2'&&day==='2026-10-20'))?4:3;
 }
 function violationLimit2(v){
  if(v.kind!=='overspend'||!(Number(v.target_value)>0))return null;
