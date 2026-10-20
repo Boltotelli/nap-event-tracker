@@ -122,3 +122,14 @@ Do not remove preserved feature work or shared Supabase runtime components merel
 - Recovery: removed the two false positive violations and their open stage-1 sanctions and associated import cases. Audit actions `violation_deleted` retain the reason and score; the other 14 SG Day 1 violations were left unchanged. All nine current SG exclusions remain active.
 - Verified the migration in production, both function source checks, date overlap behavior for current exceptions, absence of both false cases, and audit entries. No new browser-based OCR upload was made for end-to-end testing.
 - Reproducible SQL patch: `database/migrations/20261019182900_fix_sg_spending_exclusions_ocr_day_fallback.sql`.
+
+### 2026-10-20 · SG2 day-only 4× exception and OCR false-positive cleanup (production)
+
+- Confirmed alliance decision: **4× applies only to Strongest Governor phase `sg2` on 2026-10-20 UTC**, based on minimum target 312,000 (permitted 1,248,000). Oct 19 / Oct 21 and all other SG dates keep their existing limits; the previously authorized 2026-09-22 SG2 and 2026-09-23 SG3 historical exceptions remain.
+- THM ScreenImporter created 25 SG2 cases on Oct 20 at 16:15 UTC while backend still enforced 3×. Of these, 17 at or below 1,248,000 were invalid; 8 above 1,248,000 were valid.
+- Production Supabase migration `20261020192157_sg2_oct_20_only_four_times_limit` modified `public.law14_threshold_multiplier` to support only this UTC day and phase. Verified SG2 multiplier = 3 / **4** / 3 on Oct 19 / 20 / 21, SG3 unchanged.
+- Exactly 17 false SG2 violations and their 16 associated sanctions were removed within one verified SQL transaction; deletion reason and all previous sanctions are preserved in `audit_log` with `details.public.correction = sg2_2026_10_20_4x`. Non-NAP `jinsung` had no sanction. Evidence and screen import case rows cascaded with the deleted violations.
+- **Staaal's SG2 R1 timer was removed** together with the invalid violation; the prior valid Level 1 warning remains. The unstarted Level 4 entries for Meow Mike, Gilgamesh of Urk and Serfőző Mester, and other invalid sanctions, were removed without altering earlier valid offenses.
+- Post-cleanup verified: 8 valid SG2 violations remain, none below/equal 4×, exactly 17 corresponding audit deletion entries; the former invalid sanction IDs no longer exist.
+- The dashboard `phaseMultiplier2` in `live-adapter.js` mirrors the same one-day exception; `index.html` bumps its cache key so the dashboard does not display a misleading 3× threshold for these records.
+- Reproducible production function change: `database/migrations/20261020192157_sg2_oct_20_only_four_times_limit.sql`.
